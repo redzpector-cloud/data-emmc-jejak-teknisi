@@ -13,6 +13,9 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.SeekBar;
+import androidx.camera.core.Camera;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.camera.core.CameraSelector;
@@ -47,6 +50,8 @@ public class ScannerActivity extends AppCompatActivity {
     private ExecutorServiceCompat executor;
     private TextRecognizer recognizer;
     private ImageCapture imageCapture;
+    private Camera camera;
+    private float zoomRatio = 1.0f;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -84,17 +89,46 @@ public class ScannerActivity extends AppCompatActivity {
         sp.rightMargin = 18;
         root.addView(status, sp);
 
-        TextView guide = new TextView(this);
-        guide.setText("┌────────────────────────┐\n│   LETAKKAN TULISAN IC  │\n│       DI DALAM KOTAK   │\n└────────────────────────┘");
-        guide.setTextColor(0xFF38BDF8);
-        guide.setTextSize(18);
-        guide.setGravity(Gravity.CENTER);
-        guide.setTypeface(null, android.graphics.Typeface.BOLD);
-        FrameLayout.LayoutParams gp = new FrameLayout.LayoutParams(-1, -2);
-        gp.gravity = Gravity.CENTER;
-        gp.leftMargin = 30;
-        gp.rightMargin = 30;
-        root.addView(guide, gp);
+        LinearLayout zoomBar = new LinearLayout(this);
+        zoomBar.setOrientation(LinearLayout.HORIZONTAL);
+        zoomBar.setGravity(Gravity.CENTER);
+        Button zoomOut = new Button(this);
+        zoomOut.setText("−");
+        zoomOut.setTextSize(24);
+        zoomOut.setTextColor(Color.WHITE);
+        zoomOut.setBackgroundColor(0xCC111827);
+        Button zoomIn = new Button(this);
+        zoomIn.setText("+");
+        zoomIn.setTextSize(24);
+        zoomIn.setTextColor(Color.WHITE);
+        zoomIn.setBackgroundColor(0xCC111827);
+        TextView zoomLabel = new TextView(this);
+        zoomLabel.setText("  1.0×  ");
+        zoomLabel.setTextColor(Color.WHITE);
+        zoomLabel.setTextSize(15);
+        zoomLabel.setGravity(Gravity.CENTER);
+        zoomBar.addView(zoomOut, new LinearLayout.LayoutParams(64, 58));
+        zoomBar.addView(zoomLabel, new LinearLayout.LayoutParams(90, 58));
+        zoomBar.addView(zoomIn, new LinearLayout.LayoutParams(64, 58));
+        FrameLayout.LayoutParams zp = new FrameLayout.LayoutParams(-2, 58);
+        zp.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        zp.bottomMargin = 150;
+        root.addView(zoomBar, zp);
+        zoomOut.setOnClickListener(v -> {
+            if (camera != null) {
+                zoomRatio = Math.max(1.0f, zoomRatio - 0.5f);
+                camera.getCameraControl().setZoomRatio(zoomRatio);
+                zoomLabel.setText(String.format(Locale.US, "  %.1f×  ", zoomRatio));
+            }
+        });
+        zoomIn.setOnClickListener(v -> {
+            if (camera != null) {
+                float max = camera.getCameraInfo().getZoomState().getValue().getMaxZoomRatio();
+                zoomRatio = Math.min(max, zoomRatio + 0.5f);
+                camera.getCameraControl().setZoomRatio(zoomRatio);
+                zoomLabel.setText(String.format(Locale.US, "  %.1f×  ", zoomRatio));
+            }
+        });
 
         captureButton = new Button(this);
         captureButton.setText("📷  FOTO & BACA");
@@ -142,7 +176,8 @@ public class ScannerActivity extends AppCompatActivity {
                         .build();
 
                 provider.unbindAll();
-                provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageCapture);
+                camera = provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageCapture);
+                zoomRatio = 1.0f;
             } catch (Exception e) {
                 Toast.makeText(this, "Kamera tidak dapat dibuka: " + e.getClass().getSimpleName() + " - " + e.getMessage(), Toast.LENGTH_LONG).show();
             }

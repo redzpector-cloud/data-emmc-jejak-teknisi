@@ -32,7 +32,9 @@ input,select,textarea{border-radius:12px!important;background:var(--card2)!impor
 <header><div class="brand"><img src="jejak_teknisi_logo.png" alt="Jejak Teknisi"><div class="brand-title"><h1>GRADE eMMC</h1><div class="sub">JEJAK TEKNISI • Database Offline</div></div></div></header>
 <main>
 <div class="hero"><div class="hero-title">🔧 Database Grade eMMC</div><div class="hero-text">Cari kode, scan IC dengan kamera, atau tambahkan data baru dengan cepat.</div><div class="stats"><div class="stat"><b id="statTotal">0</b><span>Total kode</span></div><div class="stat"><b id="statCustom">0</b><span>Data pribadi</span></div><div class="stat"><b>OCR</b><span>Scan kamera</span></div></div></div>
-<div class="search"><input id="q" placeholder="Cari kode eMMC / grade / kapasitas..." autocomplete="off"><button class="btn" onclick="search()">CARI</button></div>
+<div class="search"><input id="q" placeholder="Cari kode eMMC / grade / kapasitas..." autocomplete="off">
+<button class="btn-secondary" style="min-width:52px;font-size:20px" onclick="startVoice()">🎙️</button>
+<button class="btn" onclick="search()">CARI</button></div>
 <div class="actions">
  <button class="btn scan-btn" onclick="startScan()">📷 SCAN eMMC<br><small style="font-weight:500;opacity:.85">Gunakan kamera</small></button>
  <button class="btn-secondary add-btn" onclick="openAdd()">＋ TAMBAH DATA<br><small style="font-weight:500;opacity:.7">Tambah / edit kode</small></button>
@@ -80,9 +82,24 @@ function search(){
    <div class="grade-pill">GRADE ${esc(x.grade||"-")}</div><div class="grid"><div class="box"><div class="label">GRADE</div><div class="value">${esc(x.grade||"-")}</div></div>
    <div class="box"><div class="label">KAPASITAS</div><div class="value">${esc(x.capacity||"-")}</div></div></div>
    ${isCustom?'<div class="small">Data tambahan / dapat diedit</div>':''}
-   <button class="edit-btn" onclick="openEditByCode('${esc(x.code).replace(/'/g,"\\'")}')">✏️ EDIT DATA</button></div>`;
+   <button class="edit-btn" onclick="openEditByCode('${esc(x.code).replace(/'/g,"\\'")}')">✏️ EDIT DATA</button>
+   <button class="edit-btn" onclick="speakEntry('${esc(x.code).replace(/'/g,"\\'")}','${esc(x.grade||"-").replace(/'/g,"\\'")}','${esc(x.capacity||"-").replace(/'/g,"\\'")}')">🔊 BACA HASIL</button></div>`;
  }).join("");
 }
+function startVoice(){
+ if(window.Android&&Android.startVoiceSearch) Android.startVoiceSearch();
+ else alert("Voice hanya tersedia di aplikasi Android.");
+}
+function setVoiceResult(text){
+ document.getElementById("q").value=text||"";
+ search();
+}
+function speakEntry(code, grade, capacity){
+ const text="Kode eMMC "+code+", Grade "+grade+", kapasitas "+capacity+".";
+ if(window.Android&&Android.speakResult) Android.speakResult(text);
+ else if("speechSynthesis" in window) speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+}
+
 function startScan(){
  if(window.Android&&Android.startScanner) Android.startScanner();
  else alert("Fitur kamera hanya tersedia di aplikasi Android.");
