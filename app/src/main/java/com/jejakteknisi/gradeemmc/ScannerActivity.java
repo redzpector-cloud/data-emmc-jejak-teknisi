@@ -1,3 +1,10 @@
+
+// GOOGLE_LENS_STYLE_FLOW:
+// Photo -> OCR -> selectable/editable text -> COPY or SEARCH.
+// SEARCH checks the local database first; if no match, open web search using
+// the cleaned selected text / eMMC part number. Web results are for reference
+// and must be reviewed before saving Manufacturer, Capacity, Grade or Version.
+
 // PHOTO_TEXT_SEARCH_FLOW_V1
 // Intended flow:
 // 1) Take photo manually.
