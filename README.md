@@ -28,3 +28,7 @@ Versi ini menggunakan enhancement gambar lokal + OCR dan pencocokan database. In
 
 ## Build
 GitHub Actions menggunakan JDK 17, Android Gradle Plugin 8.6.1, compileSdk 35, dan Gradle 8.7.
+
+
+## FIX 4
+Perbaikan compile: referensi CameraX menggunakan `androidx.camera.core.Camera` secara eksplisit untuk menghindari bentrok dengan `android.graphics.Camera`. Grade eMMC tetap dipertahankan.

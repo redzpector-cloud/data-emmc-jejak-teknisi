@@ -6,7 +6,7 @@ import com.google.common.util.concurrent.ListenableFuture;import com.google.andr
 import java.io.*;import java.util.*;import java.util.concurrent.*;
 
 public class ScannerActivity extends AppCompatActivity{
-    PreviewView preview;ImageCapture capture;Camera camera;SeekBar zoom;boolean flash=false;ExecutorService executor=Executors.newSingleThreadExecutor();static final int CAM=10,PICK=11;
+    PreviewView preview;ImageCapture capture;androidx.camera.core.Camera camera;SeekBar zoom;boolean flash=false;ExecutorService executor=Executors.newSingleThreadExecutor();static final int CAM=10,PICK=11;
     @Override protected void onCreate(Bundle b){super.onCreate(b);setContentView(R.layout.activity_scanner);preview=findViewById(R.id.preview);zoom=findViewById(R.id.zoomBar);
         findViewById(R.id.btnClose).setOnClickListener(v->finish());findViewById(R.id.btnPhoto).setOnClickListener(v->takePhoto());findViewById(R.id.btnFlash).setOnClickListener(v->toggleFlash());
         findViewById(R.id.btnGallery).setOnClickListener(v->{Intent i=new Intent(Intent.ACTION_PICK,MediaStore.Images.Media.EXTERNAL_CONTENT_URI);startActivityForResult(i,PICK);});
