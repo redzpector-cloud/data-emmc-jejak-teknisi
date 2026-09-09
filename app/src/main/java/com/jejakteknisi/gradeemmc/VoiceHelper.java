@@ -12,6 +12,7 @@ import java.util.Locale;
 public class VoiceHelper {
     private SpeechRecognizer recognizer;
     private TextToSpeech tts;
+    private float speechRate = 1.0f;
 
     public interface Listener {
         void onResult(String text);
@@ -46,15 +47,22 @@ public class VoiceHelper {
         recognizer.startListening(i);
     }
 
+    public void setRate(float rate) {
+        if (rate >= 0.5f && rate <= 2.0f) speechRate = rate;
+        if (tts != null) tts.setSpeechRate(speechRate);
+    }
+
     public void speak(Context context, String text) {
         if (tts == null) {
             tts = new TextToSpeech(context, status -> {
                 if (status == TextToSpeech.SUCCESS) {
                     tts.setLanguage(new Locale("id", "ID"));
+                    tts.setSpeechRate(speechRate);
                     tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "grade-emmc-result");
                 }
             });
         } else {
+            tts.setSpeechRate(speechRate);
             tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "grade-emmc-result");
         }
     }

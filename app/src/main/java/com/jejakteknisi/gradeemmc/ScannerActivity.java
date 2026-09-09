@@ -51,7 +51,7 @@ public class ScannerActivity extends AppCompatActivity {
     private TextRecognizer recognizer;
     private ImageCapture imageCapture;
     private Camera camera;
-    private float zoomRatio = 1.0f;
+    private float zoomRatio = getSharedPreferences("settings", MODE_PRIVATE).getFloat("camera_zoom", 1.0f);
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -130,6 +130,27 @@ public class ScannerActivity extends AppCompatActivity {
             }
         });
 
+        Button flashButton = new Button(this);
+        flashButton.setText("💡 FLASH");
+        flashButton.setTextSize(13);
+        flashButton.setTextColor(Color.WHITE);
+        flashButton.setAllCaps(false);
+        flashButton.setBackgroundColor(0xDD111827);
+        flashButton.setOnClickListener(v -> {
+            if (camera != null && camera.getCameraInfo().hasFlashUnit()) {
+                Boolean torch = camera.getCameraInfo().getTorchState().getValue();
+                camera.getCameraControl().enableTorch(torch == null || !torch);
+                flashButton.setText((torch != null && torch) ? "💡 FLASH OFF" : "💡 FLASH ON");
+            } else {
+                Toast.makeText(this, "Flash tidak tersedia di kamera ini", Toast.LENGTH_SHORT).show();
+            }
+        });
+        FrameLayout.LayoutParams fp = new FrameLayout.LayoutParams(-2, 52);
+        fp.gravity = Gravity.BOTTOM | Gravity.END;
+        fp.bottomMargin = 18;
+        fp.rightMargin = 18;
+        root.addView(flashButton, fp);
+
         captureButton = new Button(this);
         captureButton.setText("📷  FOTO & BACA");
         captureButton.setTextSize(17);
@@ -177,7 +198,10 @@ public class ScannerActivity extends AppCompatActivity {
 
                 provider.unbindAll();
                 camera = provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageCapture);
-                zoomRatio = 1.0f;
+                float savedZoom = getSharedPreferences("settings", MODE_PRIVATE).getFloat("camera_zoom", 1.0f);
+                float maxZoom = camera.getCameraInfo().getZoomState().getValue().getMaxZoomRatio();
+                zoomRatio = Math.max(1.0f, Math.min(savedZoom, maxZoom));
+                camera.getCameraControl().setZoomRatio(zoomRatio);
             } catch (Exception e) {
                 Toast.makeText(this, "Kamera tidak dapat dibuka: " + e.getClass().getSimpleName() + " - " + e.getMessage(), Toast.LENGTH_LONG).show();
             }

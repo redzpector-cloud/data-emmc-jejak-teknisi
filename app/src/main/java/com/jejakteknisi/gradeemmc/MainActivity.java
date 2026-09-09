@@ -54,6 +54,25 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void setVoiceRate(float rate) {
+            getSharedPreferences("settings", MODE_PRIVATE).edit().putFloat("voice_rate", rate).apply();
+            if (voiceHelper != null) voiceHelper.setRate(rate);
+        }
+
+        @JavascriptInterface
+        public void setCameraZoom(float zoom) {
+            getSharedPreferences("settings", MODE_PRIVATE).edit().putFloat("camera_zoom", zoom).apply();
+        }
+
+        @JavascriptInterface
+        public void openWebSearch(String url) {
+            runOnUiThread(() -> {
+                try { startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))); }
+                catch (Exception e) { Toast.makeText(MainActivity.this, "Browser tidak tersedia", Toast.LENGTH_SHORT).show(); }
+            });
+        }
+
+        @JavascriptInterface
         public void speakResult(String text) {
             runOnUiThread(() -> {
                 if (voiceHelper != null && text != null && !text.trim().isEmpty()) {
