@@ -92,7 +92,7 @@ public class ScannerActivity extends AppCompatActivity {
         LinearLayout topBar = new LinearLayout(this);
         topBar.setOrientation(LinearLayout.HORIZONTAL);
         topBar.setGravity(Gravity.CENTER_VERTICAL);
-        topBar.setPadding(8, 6, 8, 6);
+        topBar.setPadding(8, 10, 8, 10);
         topBar.setBackgroundColor(0xDD07111F);
 
         Button close = new Button(this);
@@ -121,7 +121,7 @@ public class ScannerActivity extends AppCompatActivity {
         flashButton.setOnClickListener(v -> toggleFlash());
         topBar.addView(flashButton, new LinearLayout.LayoutParams(58, 58));
 
-        FrameLayout.LayoutParams topParams = new FrameLayout.LayoutParams(-1, 70);
+        FrameLayout.LayoutParams topParams = new FrameLayout.LayoutParams(-1, 78);
         topParams.gravity = Gravity.TOP;
         root.addView(topBar, topParams);
 
@@ -141,7 +141,7 @@ public class ScannerActivity extends AppCompatActivity {
         LinearLayout zoomBar = new LinearLayout(this);
         zoomBar.setOrientation(LinearLayout.VERTICAL);
         zoomBar.setGravity(Gravity.CENTER);
-        zoomBar.setPadding(3, 5, 3, 5);
+        zoomBar.setPadding(6, 8, 6, 8);
         zoomBar.setBackgroundColor(0xCC101C2C);
 
         Button zoomIn = cameraButton("+");
@@ -159,18 +159,18 @@ public class ScannerActivity extends AppCompatActivity {
         Button zoom3 = cameraButton("3×");
         Button zoom4 = cameraButton("4×");
 
-        zoomBar.addView(zoomIn, new LinearLayout.LayoutParams(60, 52));
-        zoomBar.addView(zoomLabel, new LinearLayout.LayoutParams(60, 32));
-        zoomBar.addView(zoomOut, new LinearLayout.LayoutParams(60, 52));
-        zoomBar.addView(zoom05, new LinearLayout.LayoutParams(60, 42));
-        zoomBar.addView(zoom1, new LinearLayout.LayoutParams(60, 42));
-        zoomBar.addView(zoom2, new LinearLayout.LayoutParams(60, 42));
-        zoomBar.addView(zoom3, new LinearLayout.LayoutParams(60, 42));
-        zoomBar.addView(zoom4, new LinearLayout.LayoutParams(60, 42));
+        zoomBar.addView(zoomIn, new LinearLayout.LayoutParams(76, 64));
+        zoomBar.addView(zoomLabel, new LinearLayout.LayoutParams(76, 44));
+        zoomBar.addView(zoomOut, new LinearLayout.LayoutParams(76, 64));
+        zoomBar.addView(zoom05, new LinearLayout.LayoutParams(76, 52));
+        zoomBar.addView(zoom1, new LinearLayout.LayoutParams(76, 52));
+        zoomBar.addView(zoom2, new LinearLayout.LayoutParams(76, 52));
+        zoomBar.addView(zoom3, new LinearLayout.LayoutParams(76, 52));
+        zoomBar.addView(zoom4, new LinearLayout.LayoutParams(76, 52));
 
-        FrameLayout.LayoutParams zoomParams = new FrameLayout.LayoutParams(70, 390);
+        FrameLayout.LayoutParams zoomParams = new FrameLayout.LayoutParams(90, 500);
         zoomParams.gravity = Gravity.CENTER_VERTICAL | Gravity.END;
-        zoomParams.rightMargin = 10;
+        zoomParams.rightMargin = 12;
         root.addView(zoomBar, zoomParams);
 
         zoomOut.setOnClickListener(v -> changeZoom(-0.5f));
@@ -190,14 +190,14 @@ public class ScannerActivity extends AppCompatActivity {
         captureButton.setGravity(Gravity.CENTER);
         captureButton.setBackgroundColor(0xFF078DFF);
         captureButton.setPadding(12, 0, 12, 0);
-        captureButton.setMinHeight(72);
+        captureButton.setMinHeight(86);
         captureButton.setOnClickListener(v -> takePhoto());
 
-        FrameLayout.LayoutParams captureParams = new FrameLayout.LayoutParams(-1, 76);
+        FrameLayout.LayoutParams captureParams = new FrameLayout.LayoutParams(-1, 86);
         captureParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
         captureParams.leftMargin = 24;
         captureParams.rightMargin = 24;
-        captureParams.bottomMargin = 18;
+        captureParams.bottomMargin = 92;
         root.addView(captureButton, captureParams);
 
         TextView hint = new TextView(this);
@@ -209,7 +209,7 @@ public class ScannerActivity extends AppCompatActivity {
         hintParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
         hintParams.leftMargin = 70;
         hintParams.rightMargin = 70;
-        hintParams.bottomMargin = 98;
+        hintParams.bottomMargin = 184;
         root.addView(hint, hintParams);
 
         setContentView(root);
