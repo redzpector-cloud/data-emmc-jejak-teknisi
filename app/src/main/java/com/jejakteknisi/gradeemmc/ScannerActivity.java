@@ -1,3 +1,13 @@
+// PHOTO_TEXT_SEARCH_FLOW_V1
+// Intended flow:
+// 1) Take photo manually.
+// 2) Run OCR on the captured photo (not continuous camera OCR).
+// 3) Show extracted text in an editable selection screen.
+// 4) User can COPY selected/full text.
+// 5) User taps SEARCH to search the selected text, similar to Google Lens text search.
+// 6) Search should use the cleaned OCR text; eMMC code/part number gets priority.
+// 7) Keep camera controls: tap-to-focus, vertical zoom, flash, and elevated shutter.
+
 package com.jejakteknisi.gradeemmc;
 
 import android.Manifest;
