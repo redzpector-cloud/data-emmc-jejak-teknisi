@@ -88,125 +88,159 @@ public class ScannerActivity extends AppCompatActivity {
         previewView.setScaleType(PreviewView.ScaleType.FILL_CENTER);
         root.addView(previewView, new FrameLayout.LayoutParams(-1, -1));
 
-        // Top bar
+        // TOP BAR
         LinearLayout topBar = new LinearLayout(this);
         topBar.setOrientation(LinearLayout.HORIZONTAL);
         topBar.setGravity(Gravity.CENTER_VERTICAL);
-        topBar.setPadding(8, 0, 8, 0);
-        topBar.setBackgroundColor(0xCC07111F);
+        topBar.setPadding(8, 6, 8, 6);
+        topBar.setBackgroundColor(0xDD07111F);
 
-        Button closeTop = new Button(this);
-        closeTop.setText("‹");
-        closeTop.setTextSize(32);
-        closeTop.setTextColor(Color.WHITE);
-        closeTop.setAllCaps(false);
-        closeTop.setBackgroundColor(Color.TRANSPARENT);
-        closeTop.setOnClickListener(v -> finish());
+        Button close = new Button(this);
+        close.setText("‹");
+        close.setTextSize(32);
+        close.setTextColor(Color.WHITE);
+        close.setAllCaps(false);
+        close.setBackgroundColor(Color.TRANSPARENT);
+        close.setOnClickListener(v -> finish());
+        topBar.addView(close, new LinearLayout.LayoutParams(58, 58));
 
         TextView title = new TextView(this);
-        title.setText("  Scan eMMC");
+        title.setText("Scan eMMC");
         title.setTextColor(Color.WHITE);
         title.setTextSize(20);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
         title.setGravity(Gravity.CENTER_VERTICAL);
-
-        topBar.addView(closeTop, new LinearLayout.LayoutParams(54, 64));
-        topBar.addView(title, new LinearLayout.LayoutParams(0, 64, 1));
+        topBar.addView(title, new LinearLayout.LayoutParams(0, 58, 1));
 
         flashButton = new Button(this);
         flashButton.setText("💡");
-        flashButton.setTextSize(20);
+        flashButton.setTextSize(21);
         flashButton.setTextColor(Color.WHITE);
         flashButton.setAllCaps(false);
-        flashButton.setBackgroundColor(0xAA111827);
+        flashButton.setBackgroundColor(0xAA17263A);
         flashButton.setOnClickListener(v -> toggleFlash());
-        topBar.addView(flashButton, new LinearLayout.LayoutParams(54, 54));
+        topBar.addView(flashButton, new LinearLayout.LayoutParams(58, 58));
 
-        FrameLayout.LayoutParams topParams = new FrameLayout.LayoutParams(-1, 68);
+        FrameLayout.LayoutParams topParams = new FrameLayout.LayoutParams(-1, 70);
         topParams.gravity = Gravity.TOP;
         root.addView(topBar, topParams);
 
         status = new TextView(this);
-        status.setText("Arahkan kamera ke tulisan eMMC.\nTekan tombol FOTO setelah tulisan jelas.");
+        status.setText("Arahkan kamera ke tulisan eMMC");
         status.setTextColor(Color.WHITE);
         status.setTextSize(13);
         status.setGravity(Gravity.CENTER);
-        status.setPadding(14, 8, 14, 8);
-        status.setBackgroundColor(0xAA111827);
+        status.setPadding(16, 8, 16, 8);
+        status.setBackgroundColor(0xAA07111F);
         FrameLayout.LayoutParams statusParams = new FrameLayout.LayoutParams(-2, -2);
         statusParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-        statusParams.topMargin = 78;
+        statusParams.topMargin = 80;
         root.addView(status, statusParams);
 
-        // Zoom controls on the RIGHT side, vertically stacked.
+        // RIGHT-SIDE ZOOM: 0.5x steps, plus quick presets.
         LinearLayout zoomBar = new LinearLayout(this);
         zoomBar.setOrientation(LinearLayout.VERTICAL);
         zoomBar.setGravity(Gravity.CENTER);
-        zoomBar.setPadding(4, 4, 4, 4);
-        zoomBar.setBackgroundColor(0x99111827);
+        zoomBar.setPadding(3, 5, 3, 5);
+        zoomBar.setBackgroundColor(0xCC101C2C);
 
-        Button zoomIn = new Button(this);
-        zoomIn.setText("+");
-        zoomIn.setTextSize(22);
-        zoomIn.setTextColor(Color.WHITE);
-        zoomIn.setAllCaps(false);
-        zoomIn.setBackgroundColor(Color.TRANSPARENT);
-
+        Button zoomIn = cameraButton("+");
+        Button zoomOut = cameraButton("−");
         zoomLabel = new TextView(this);
         zoomLabel.setTextColor(Color.WHITE);
         zoomLabel.setTextSize(13);
         zoomLabel.setGravity(Gravity.CENTER);
-        zoomLabel.setPadding(4, 2, 4, 2);
+        zoomLabel.setPadding(2, 4, 2, 4);
         updateZoomLabel();
 
-        Button zoomOut = new Button(this);
-        zoomOut.setText("−");
-        zoomOut.setTextSize(22);
-        zoomOut.setTextColor(Color.WHITE);
-        zoomOut.setAllCaps(false);
-        zoomOut.setBackgroundColor(Color.TRANSPARENT);
+        Button zoom05 = cameraButton("0.5×");
+        Button zoom1 = cameraButton("1×");
+        Button zoom2 = cameraButton("2×");
+        Button zoom3 = cameraButton("3×");
+        Button zoom4 = cameraButton("4×");
 
-        zoomBar.addView(zoomIn, new LinearLayout.LayoutParams(58, 54));
-        zoomBar.addView(zoomLabel, new LinearLayout.LayoutParams(58, 36));
-        zoomBar.addView(zoomOut, new LinearLayout.LayoutParams(58, 54));
+        zoomBar.addView(zoomIn, new LinearLayout.LayoutParams(60, 52));
+        zoomBar.addView(zoomLabel, new LinearLayout.LayoutParams(60, 32));
+        zoomBar.addView(zoomOut, new LinearLayout.LayoutParams(60, 52));
+        zoomBar.addView(zoom05, new LinearLayout.LayoutParams(60, 42));
+        zoomBar.addView(zoom1, new LinearLayout.LayoutParams(60, 42));
+        zoomBar.addView(zoom2, new LinearLayout.LayoutParams(60, 42));
+        zoomBar.addView(zoom3, new LinearLayout.LayoutParams(60, 42));
+        zoomBar.addView(zoom4, new LinearLayout.LayoutParams(60, 42));
 
-        FrameLayout.LayoutParams zoomParams = new FrameLayout.LayoutParams(66, 150);
+        FrameLayout.LayoutParams zoomParams = new FrameLayout.LayoutParams(70, 390);
         zoomParams.gravity = Gravity.CENTER_VERTICAL | Gravity.END;
-        zoomParams.rightMargin = 12;
+        zoomParams.rightMargin = 10;
         root.addView(zoomBar, zoomParams);
 
         zoomOut.setOnClickListener(v -> changeZoom(-0.5f));
         zoomIn.setOnClickListener(v -> changeZoom(0.5f));
+        zoom05.setOnClickListener(v -> setZoomPreset(0.5f));
+        zoom1.setOnClickListener(v -> setZoomPreset(1.0f));
+        zoom2.setOnClickListener(v -> setZoomPreset(2.0f));
+        zoom3.setOnClickListener(v -> setZoomPreset(3.0f));
+        zoom4.setOnClickListener(v -> setZoomPreset(4.0f));
 
-        // Large, always-visible shutter button at the BOTTOM CENTER.
+        // BOTTOM CAMERA BUTTON: use a large Button with a solid background and high z-order.
         captureButton = new Button(this);
         captureButton.setText("📷  FOTO & BACA");
-        captureButton.setTextSize(17);
+        captureButton.setTextSize(18);
         captureButton.setTextColor(Color.WHITE);
         captureButton.setAllCaps(false);
         captureButton.setGravity(Gravity.CENTER);
         captureButton.setBackgroundColor(0xFF078DFF);
-        captureButton.setElevation(12f);
+        captureButton.setPadding(12, 0, 12, 0);
+        captureButton.setMinHeight(72);
         captureButton.setOnClickListener(v -> takePhoto());
 
-        FrameLayout.LayoutParams captureParams = new FrameLayout.LayoutParams(-1, 68);
+        FrameLayout.LayoutParams captureParams = new FrameLayout.LayoutParams(-1, 76);
         captureParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-        captureParams.leftMargin = 28;
-        captureParams.rightMargin = 28;
-        captureParams.bottomMargin = 20;
+        captureParams.leftMargin = 24;
+        captureParams.rightMargin = 24;
+        captureParams.bottomMargin = 18;
         root.addView(captureButton, captureParams);
 
         TextView hint = new TextView(this);
-        hint.setText("Foto manual • Zoom di kanan");
-        hint.setTextColor(0xDDFFFFFF);
+        hint.setText("Tekan FOTO & BACA setelah tulisan eMMC fokus");
+        hint.setTextColor(0xEEFFFFFF);
         hint.setTextSize(11);
         hint.setGravity(Gravity.CENTER);
-        FrameLayout.LayoutParams hintParams = new FrameLayout.LayoutParams(-2, 28);
+        FrameLayout.LayoutParams hintParams = new FrameLayout.LayoutParams(-1, 28);
         hintParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-        hintParams.bottomMargin = 92;
+        hintParams.leftMargin = 70;
+        hintParams.rightMargin = 70;
+        hintParams.bottomMargin = 98;
         root.addView(hint, hintParams);
 
         setContentView(root);
+    }
+
+    private Button cameraButton(String text) {
+        Button b = new Button(this);
+        b.setText(text);
+        b.setTextSize(14);
+        b.setTextColor(Color.WHITE);
+        b.setAllCaps(false);
+        b.setGravity(Gravity.CENTER);
+        b.setBackgroundColor(0xFF1B314A);
+        b.setPadding(0, 0, 0, 0);
+        return b;
+    }
+
+    private void setZoomPreset(float value) {
+        if (camera == null) {
+            Toast.makeText(this, "Kamera belum siap.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Float maxValue = camera.getCameraInfo().getZoomState().getValue() == null
+                ? 1.0f
+                : camera.getCameraInfo().getZoomState().getValue().getMaxZoomRatio();
+        float max = maxValue == null ? 1.0f : maxValue;
+        zoomRatio = Math.max(1.0f, Math.min(max, value));
+        camera.getCameraControl().setZoomRatio(zoomRatio);
+        updateZoomLabel();
+        getSharedPreferences("settings", MODE_PRIVATE).edit()
+                .putFloat("camera_zoom", zoomRatio).apply();
     }
 
     private void startCamera() {
