@@ -82,113 +82,129 @@ public class ScannerActivity extends AppCompatActivity {
 
     private void buildCameraUi() {
         FrameLayout root = new FrameLayout(this);
+        root.setBackgroundColor(Color.BLACK);
 
         previewView = new PreviewView(this);
         previewView.setScaleType(PreviewView.ScaleType.FILL_CENTER);
         root.addView(previewView, new FrameLayout.LayoutParams(-1, -1));
 
+        // Top bar
+        LinearLayout topBar = new LinearLayout(this);
+        topBar.setOrientation(LinearLayout.HORIZONTAL);
+        topBar.setGravity(Gravity.CENTER_VERTICAL);
+        topBar.setPadding(8, 0, 8, 0);
+        topBar.setBackgroundColor(0xCC07111F);
+
+        Button closeTop = new Button(this);
+        closeTop.setText("‹");
+        closeTop.setTextSize(32);
+        closeTop.setTextColor(Color.WHITE);
+        closeTop.setAllCaps(false);
+        closeTop.setBackgroundColor(Color.TRANSPARENT);
+        closeTop.setOnClickListener(v -> finish());
+
         TextView title = new TextView(this);
-        title.setText("Scan eMMC");
+        title.setText("  Scan eMMC");
         title.setTextColor(Color.WHITE);
         title.setTextSize(20);
-        title.setGravity(Gravity.CENTER_VERTICAL);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
-        title.setPadding(20, 0, 20, 0);
-        title.setBackgroundColor(0xCC07111F);
-        FrameLayout.LayoutParams titleParams = new FrameLayout.LayoutParams(-1, 64);
-        titleParams.gravity = Gravity.TOP;
-        root.addView(title, titleParams);
+        title.setGravity(Gravity.CENTER_VERTICAL);
+
+        topBar.addView(closeTop, new LinearLayout.LayoutParams(54, 64));
+        topBar.addView(title, new LinearLayout.LayoutParams(0, 64, 1));
+
+        flashButton = new Button(this);
+        flashButton.setText("💡");
+        flashButton.setTextSize(20);
+        flashButton.setTextColor(Color.WHITE);
+        flashButton.setAllCaps(false);
+        flashButton.setBackgroundColor(0xAA111827);
+        flashButton.setOnClickListener(v -> toggleFlash());
+        topBar.addView(flashButton, new LinearLayout.LayoutParams(54, 54));
+
+        FrameLayout.LayoutParams topParams = new FrameLayout.LayoutParams(-1, 68);
+        topParams.gravity = Gravity.TOP;
+        root.addView(topBar, topParams);
 
         status = new TextView(this);
-        status.setText("Arahkan kamera ke tulisan eMMC.\nTekan FOTO & BACA setelah tulisan terlihat jelas.");
+        status.setText("Arahkan kamera ke tulisan eMMC.\nTekan tombol FOTO setelah tulisan jelas.");
         status.setTextColor(Color.WHITE);
-        status.setTextSize(14);
+        status.setTextSize(13);
         status.setGravity(Gravity.CENTER);
-        status.setPadding(16, 12, 16, 12);
-        status.setBackgroundColor(0xCC111827);
-        FrameLayout.LayoutParams statusParams = new FrameLayout.LayoutParams(-1, -2);
-        statusParams.gravity = Gravity.TOP;
-        statusParams.topMargin = 72;
-        statusParams.leftMargin = 12;
-        statusParams.rightMargin = 12;
+        status.setPadding(14, 8, 14, 8);
+        status.setBackgroundColor(0xAA111827);
+        FrameLayout.LayoutParams statusParams = new FrameLayout.LayoutParams(-2, -2);
+        statusParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+        statusParams.topMargin = 78;
         root.addView(status, statusParams);
 
+        // Zoom controls on the RIGHT side, vertically stacked.
         LinearLayout zoomBar = new LinearLayout(this);
-        zoomBar.setOrientation(LinearLayout.HORIZONTAL);
+        zoomBar.setOrientation(LinearLayout.VERTICAL);
         zoomBar.setGravity(Gravity.CENTER);
-
-        Button zoomOut = new Button(this);
-        zoomOut.setText("−");
-        zoomOut.setTextSize(22);
-        zoomOut.setTextColor(Color.WHITE);
-        zoomOut.setBackgroundColor(0xDD111827);
-
-        zoomLabel = new TextView(this);
-        zoomLabel.setTextColor(Color.WHITE);
-        zoomLabel.setTextSize(14);
-        zoomLabel.setGravity(Gravity.CENTER);
-        zoomLabel.setBackgroundColor(0xDD111827);
-        updateZoomLabel();
+        zoomBar.setPadding(4, 4, 4, 4);
+        zoomBar.setBackgroundColor(0x99111827);
 
         Button zoomIn = new Button(this);
         zoomIn.setText("+");
         zoomIn.setTextSize(22);
         zoomIn.setTextColor(Color.WHITE);
-        zoomIn.setBackgroundColor(0xDD111827);
+        zoomIn.setAllCaps(false);
+        zoomIn.setBackgroundColor(Color.TRANSPARENT);
 
-        zoomBar.addView(zoomOut, new LinearLayout.LayoutParams(60, 56));
-        zoomBar.addView(zoomLabel, new LinearLayout.LayoutParams(84, 56));
-        zoomBar.addView(zoomIn, new LinearLayout.LayoutParams(60, 56));
+        zoomLabel = new TextView(this);
+        zoomLabel.setTextColor(Color.WHITE);
+        zoomLabel.setTextSize(13);
+        zoomLabel.setGravity(Gravity.CENTER);
+        zoomLabel.setPadding(4, 2, 4, 2);
+        updateZoomLabel();
 
-        FrameLayout.LayoutParams zoomParams = new FrameLayout.LayoutParams(-2, 56);
-        zoomParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-        zoomParams.bottomMargin = 154;
+        Button zoomOut = new Button(this);
+        zoomOut.setText("−");
+        zoomOut.setTextSize(22);
+        zoomOut.setTextColor(Color.WHITE);
+        zoomOut.setAllCaps(false);
+        zoomOut.setBackgroundColor(Color.TRANSPARENT);
+
+        zoomBar.addView(zoomIn, new LinearLayout.LayoutParams(58, 54));
+        zoomBar.addView(zoomLabel, new LinearLayout.LayoutParams(58, 36));
+        zoomBar.addView(zoomOut, new LinearLayout.LayoutParams(58, 54));
+
+        FrameLayout.LayoutParams zoomParams = new FrameLayout.LayoutParams(66, 150);
+        zoomParams.gravity = Gravity.CENTER_VERTICAL | Gravity.END;
+        zoomParams.rightMargin = 12;
         root.addView(zoomBar, zoomParams);
 
         zoomOut.setOnClickListener(v -> changeZoom(-0.5f));
         zoomIn.setOnClickListener(v -> changeZoom(0.5f));
 
+        // Large, always-visible shutter button at the BOTTOM CENTER.
         captureButton = new Button(this);
         captureButton.setText("📷  FOTO & BACA");
         captureButton.setTextSize(17);
         captureButton.setTextColor(Color.WHITE);
         captureButton.setAllCaps(false);
+        captureButton.setGravity(Gravity.CENTER);
         captureButton.setBackgroundColor(0xFF078DFF);
+        captureButton.setElevation(12f);
         captureButton.setOnClickListener(v -> takePhoto());
 
-        FrameLayout.LayoutParams captureParams = new FrameLayout.LayoutParams(-1, 64);
-        captureParams.gravity = Gravity.BOTTOM;
-        captureParams.leftMargin = 22;
-        captureParams.rightMargin = 22;
-        captureParams.bottomMargin = 76;
+        FrameLayout.LayoutParams captureParams = new FrameLayout.LayoutParams(-1, 68);
+        captureParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        captureParams.leftMargin = 28;
+        captureParams.rightMargin = 28;
+        captureParams.bottomMargin = 20;
         root.addView(captureButton, captureParams);
 
-        flashButton = new Button(this);
-        flashButton.setText("💡 Flash");
-        flashButton.setTextSize(13);
-        flashButton.setTextColor(Color.WHITE);
-        flashButton.setAllCaps(false);
-        flashButton.setBackgroundColor(0xDD111827);
-        flashButton.setOnClickListener(v -> toggleFlash());
-
-        FrameLayout.LayoutParams flashParams = new FrameLayout.LayoutParams(-2, 52);
-        flashParams.gravity = Gravity.BOTTOM | Gravity.END;
-        flashParams.rightMargin = 16;
-        flashParams.bottomMargin = 16;
-        root.addView(flashButton, flashParams);
-
-        Button close = new Button(this);
-        close.setText("Tutup");
-        close.setTextColor(Color.WHITE);
-        close.setAllCaps(false);
-        close.setBackgroundColor(0xDD111827);
-        close.setOnClickListener(v -> finish());
-
-        FrameLayout.LayoutParams closeParams = new FrameLayout.LayoutParams(-2, 52);
-        closeParams.gravity = Gravity.BOTTOM | Gravity.START;
-        closeParams.leftMargin = 16;
-        closeParams.bottomMargin = 16;
-        root.addView(close, closeParams);
+        TextView hint = new TextView(this);
+        hint.setText("Foto manual • Zoom di kanan");
+        hint.setTextColor(0xDDFFFFFF);
+        hint.setTextSize(11);
+        hint.setGravity(Gravity.CENTER);
+        FrameLayout.LayoutParams hintParams = new FrameLayout.LayoutParams(-2, 28);
+        hintParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
+        hintParams.bottomMargin = 92;
+        root.addView(hint, hintParams);
 
         setContentView(root);
     }
