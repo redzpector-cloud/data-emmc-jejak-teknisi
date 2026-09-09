@@ -1,34 +1,14 @@
-# Jejak Teknisi — eMMC Identifier
+# Jejak Teknisi — Grade eMMC + Schematic
 
-Project Android baru untuk identifikasi marking eMMC.
+Project Android source baru karena source project lama tidak tersedia. Fitur versi 1:
+1. Grade eMMC
+2. Pencarian kode/grade/kapasitas
+3. Scan OCR kamera (ML Kit)
+4. Filter kategori grade
+5. Tambah/Edit data (hapus tersedia; edit dapat dikembangkan)
+6. Database SQLite offline
+7. Modul Schematic: pencarian model/judul dan database schematic dasar
 
-## Alur scan
-1. Kamera live dengan tap-to-focus.
-2. Zoom vertikal + / - dan slider.
-3. Tekan FOTO.
-4. Foto ditampilkan untuk diperiksa.
-5. Tekan BACA TULISAN.
-6. Gambar diproses dengan enhancement lokal (grayscale/kontras/scale) dan OCR dijalankan pada foto asli + versi enhanced.
-7. Hasil OCR dicocokkan dengan database menggunakan pencocokan karakter.
-8. Jika tidak ditemukan, tersedia CARI WEB.
+Catatan: APK referensi tidak menyertakan source code. Database 263 kode yang pernah terlihat pada APK tidak diekstrak otomatis dalam project ini; beberapa seed contoh disediakan agar aplikasi langsung dapat dibangun. Data asli dapat dimasukkan melalui fitur tambah atau migrasi database pada tahap berikutnya.
 
-## Data eMMC
-- Kode
-- Manufacturer
-- Kapasitas
-- eMMC Version
-- **Grade eMMC**
-- Package
-- Sumber
-
-Grade eMMC sengaja dipertahankan dan dapat diedit. Nilai yang belum tervalidasi ditampilkan sebagai "Belum ditentukan".
-
-## Catatan AI
-Versi ini menggunakan enhancement gambar lokal + OCR dan pencocokan database. Ini bukan layanan AI cloud dan tidak mengarang karakter yang tidak terlihat. Integrasi AI cloud dapat ditambahkan sebagai tahap berikutnya jika dibutuhkan.
-
-## Build
-GitHub Actions menggunakan JDK 17, Android Gradle Plugin 8.6.1, compileSdk 35, dan Gradle 8.7.
-
-
-## FIX 4
-Perbaikan compile: referensi CameraX menggunakan `androidx.camera.core.Camera` secara eksplisit untuk menghindari bentrok dengan `android.graphics.Camera`. Grade eMMC tetap dipertahankan.
+Build: buka folder ini di Android Studio, tunggu Gradle sync, lalu Build > Make Project / Run.
