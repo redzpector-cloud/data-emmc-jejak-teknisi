@@ -103,7 +103,7 @@ public class ScannerActivity extends AppCompatActivity {
                 provider.unbindAll();
                 provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis);
             } catch (Exception e) {
-                Toast.makeText(this, "Kamera tidak dapat dibuka", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Kamera tidak dapat dibuka: " + e.getClass().getSimpleName() + " - " + e.getMessage(), Toast.LENGTH_LONG).show();
             }
         }, ContextCompat.getMainExecutor(this));
     }
