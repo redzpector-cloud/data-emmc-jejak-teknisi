@@ -148,10 +148,11 @@ public class ScannerActivity extends AppCompatActivity {
         EmmcRecord found=null;
         for(EmmcRecord e:list) if(clean.toUpperCase(Locale.US).contains(e.code.toUpperCase(Locale.US)) || e.code.equalsIgnoreCase(clean)){found=e;break;}
         if(found!=null){
-            new AlertDialog.Builder(this).setTitle(found.code)
-                .setMessage("Manufacturer: "+found.manufacturer+"\nKapasitas: "+found.capacity+"\neMMC Version: "+found.version+
-                    "\nGrade eMMC: "+(found.grade.isEmpty()?"Belum ditentukan":found.grade)+"\nPackage: "+found.pack+"\nSumber: "+found.source)
-                .setPositiveButton("EDIT",(d,w)->editFound(found)).setNegativeButton("OK",null).show();
+            final EmmcRecord selectedRecord = found;
+        new AlertDialog.Builder(this).setTitle(selectedRecord.code)
+                .setMessage("Manufacturer: "+selectedRecord.manufacturer+"\nKapasitas: "+selectedRecord.capacity+"\neMMC Version: "+selectedRecord.version+
+                    "\nGrade eMMC: "+(selectedRecord.grade.isEmpty()?"Belum ditentukan":selectedRecord.grade)+"\nPackage: "+selectedRecord.pack+"\nSumber: "+selectedRecord.source)
+                .setPositiveButton("EDIT",(d,w)->editFound(selectedRecord)).setNegativeButton("OK",null).show();
         }else{
             String url="https://www.google.com/search?q="+android.net.Uri.encode(clean+" eMMC datasheet capacity grade");
             startActivity(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse(url)));
