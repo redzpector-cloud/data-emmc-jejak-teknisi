@@ -1,44 +1,93 @@
 package com.jejakteknisi.gradeemmc;
 
-import android.Manifest;import android.app.*;import android.content.*;import android.content.pm.PackageManager;import android.graphics.*;import android.net.Uri;import android.os.*;import android.provider.MediaStore;import android.view.*;import android.widget.*;
-import androidx.annotation.NonNull;import androidx.appcompat.app.AppCompatActivity;import androidx.camera.core.*;import androidx.camera.lifecycle.ProcessCameraProvider;import androidx.camera.view.PreviewView;import androidx.core.app.ActivityCompat;import androidx.core.content.ContextCompat;
-import com.google.common.util.concurrent.ListenableFuture;import com.google.android.gms.tasks.Task;import com.google.mlkit.vision.common.InputImage;import com.google.mlkit.vision.text.Text;import com.google.mlkit.vision.text.TextRecognition;import com.google.mlkit.vision.text.TextRecognizer;import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
-import java.io.*;import java.util.*;import java.util.concurrent.*;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.os.Bundle;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageCapture;
+import androidx.camera.core.ImageCaptureException;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.text.TextRecognition;
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class ScannerActivity extends AppCompatActivity{
-    PreviewView preview;ImageCapture capture;androidx.camera.core.Camera camera;SeekBar zoom;boolean flash=false;ExecutorService executor=Executors.newSingleThreadExecutor();static final int CAM=10,PICK=11;
-    @Override protected void onCreate(Bundle b){super.onCreate(b);setContentView(R.layout.activity_scanner);preview=findViewById(R.id.preview);zoom=findViewById(R.id.zoomBar);
-        findViewById(R.id.btnClose).setOnClickListener(v->finish());findViewById(R.id.btnPhoto).setOnClickListener(v->takePhoto());findViewById(R.id.btnFlash).setOnClickListener(v->toggleFlash());
-        findViewById(R.id.btnGallery).setOnClickListener(v->{Intent i=new Intent(Intent.ACTION_PICK,MediaStore.Images.Media.EXTERNAL_CONTENT_URI);startActivityForResult(i,PICK);});
-        findViewById(R.id.btnZoomIn).setOnClickListener(v->setZoomProgress(Math.min(100,zoom.getProgress()+12)));findViewById(R.id.btnZoomOut).setOnClickListener(v->setZoomProgress(Math.max(0,zoom.getProgress()-12)));
-        zoom.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onProgressChanged(SeekBar b,int p,boolean from){applyZoom(p);}public void onStartTrackingTouch(SeekBar b){}public void onStopTrackingTouch(SeekBar b){}});
-        if(ContextCompat.checkSelfPermission(this,Manifest.permission.CAMERA)!=PackageManager.PERMISSION_GRANTED)ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.CAMERA},CAM);else startCamera();
+public class ScannerActivity extends AppCompatActivity {
+    private static final int REQ_CAMERA = 10;
+    private PreviewView preview;
+    private TextView result;
+    private ImageCapture capture;
+    private ExecutorService executor;
+
+    @Override public void onCreate(Bundle b) {
+        super.onCreate(b);
+        setContentView(R.layout.activity_scanner);
+        preview = findViewById(R.id.preview);
+        result = findViewById(R.id.result);
+        Button scan = findViewById(R.id.scan);
+        executor = Executors.newSingleThreadExecutor();
+        scan.setOnClickListener(v -> takePhoto());
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                == PackageManager.PERMISSION_GRANTED) startCamera();
+        else ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, REQ_CAMERA);
     }
-    void setZoomProgress(int p){zoom.setProgress(p);applyZoom(p);}
-    void applyZoom(int p){if(camera==null)return;androidx.lifecycle.LiveData<androidx.camera.core.ZoomState> z=camera.getCameraInfo().getZoomState();androidx.camera.core.ZoomState st=z.getValue();if(st==null)return;float ratio=st.getMinZoomRatio()+(st.getMaxZoomRatio()-st.getMinZoomRatio())*(p/100f);camera.getCameraControl().setZoomRatio(ratio);}
-    void startCamera(){ListenableFuture<ProcessCameraProvider> f=ProcessCameraProvider.getInstance(this);f.addListener(()->{try{ProcessCameraProvider p=f.get();p.unbindAll();Preview pre=new Preview.Builder().build();pre.setSurfaceProvider(preview.getSurfaceProvider());capture=new ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY).setJpegQuality(100).build();camera=p.bindToLifecycle(this,CameraSelector.DEFAULT_BACK_CAMERA,pre,capture);
-            preview.setOnTouchListener((v,e)->{if(e.getAction()==MotionEvent.ACTION_UP&&camera!=null){MeteringPointFactory m=preview.getMeteringPointFactory();FocusMeteringAction a=new FocusMeteringAction.Builder(m.createPoint(e.getX(),e.getY()),FocusMeteringAction.FLAG_AF|FocusMeteringAction.FLAG_AE).setAutoCancelDuration(3,TimeUnit.SECONDS).build();camera.getCameraControl().startFocusAndMetering(a);Toast.makeText(this,"Fokus dikunci",Toast.LENGTH_SHORT).show();}return true;});
-        }catch(Exception e){Toast.makeText(this,"Kamera gagal dibuka: "+e.getMessage(),Toast.LENGTH_LONG).show();}},ContextCompat.getMainExecutor(this));}
-    void toggleFlash(){flash=!flash;if(capture!=null)capture.setFlashMode(flash?ImageCapture.FLASH_MODE_ON:ImageCapture.FLASH_MODE_OFF);Toast.makeText(this,flash?"Flash ON":"Flash OFF",Toast.LENGTH_SHORT).show();}
-    void takePhoto(){if(capture==null)return;File dir=new File(getCacheDir(),"scan");if(!dir.exists())dir.mkdirs();File file=new File(dir,"emmc_"+System.currentTimeMillis()+".jpg");ImageCapture.OutputFileOptions o=new ImageCapture.OutputFileOptions.Builder(file).build();capture.takePicture(o,ContextCompat.getMainExecutor(this),new ImageCapture.OnImageSavedCallback(){public void onError(@NonNull ImageCaptureException e){Toast.makeText(ScannerActivity.this,"Foto gagal: "+e.getMessage(),Toast.LENGTH_LONG).show();}public void onImageSaved(@NonNull ImageCapture.OutputFileResults r){showReview(file);}});}
-    void showReview(File file){ImageView image=new ImageView(this);image.setImageURI(Uri.fromFile(file));image.setAdjustViewBounds(true);image.setPadding(8,8,8,8);LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.addView(image,new LinearLayout.LayoutParams(-1,dp(360)));
-        TextView hint=new TextView(this);hint.setText("Periksa foto. Jika marking terlihat jelas, tekan BACA TULISAN.");hint.setTextColor(Color.WHITE);hint.setPadding(dp(12),dp(8),dp(12),dp(8));box.addView(hint);
-        AlertDialog dlg=new AlertDialog.Builder(this).setTitle("Foto eMMC").setView(box).setPositiveButton("BACA TULISAN",null).setNegativeButton("FOTO ULANG",null).create();dlg.setOnShowListener(x->{dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{dlg.dismiss();processPhoto(file.getAbsolutePath());});dlg.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(v->dlg.dismiss());});dlg.show();}
-    int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
-    void processPhoto(String path){Toast.makeText(this,"Memperjelas foto & membaca tulisan…",Toast.LENGTH_SHORT).show();executor.execute(()->{Bitmap bm=BitmapFactory.decodeFile(path);if(bm==null){runOnUiThread(()->Toast.makeText(this,"Foto tidak bisa dibaca",Toast.LENGTH_LONG).show());return;}Bitmap enhanced=enhance(bm);runOcrVariants(bm,enhanced,path);});}
-    Bitmap enhance(Bitmap src){int w=src.getWidth(),h=src.getHeight();float scale=Math.min(1f,2200f/Math.max(w,h));Bitmap b=Bitmap.createScaledBitmap(src,Math.max(1,(int)(w*scale)),Math.max(1,(int)(h*scale)),true);Bitmap out=Bitmap.createBitmap(b.getWidth(),b.getHeight(),Bitmap.Config.ARGB_8888);Canvas c=new Canvas(out);Paint p=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);ColorMatrix m=new ColorMatrix(new float[]{1.65f,0,0,0,-70,0,1.65f,0,0,-70,0,0,1.65f,0,-70,0,0,0,1,0});p.setColorFilter(new ColorMatrixColorFilter(m));c.drawBitmap(b,0,0,p);return out;}
-    void runOcrVariants(Bitmap original,Bitmap enhanced,String path){TextRecognizer rec=TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);TaskHolder holder=new TaskHolder();rec.process(InputImage.fromBitmap(original,0)).addOnSuccessListener(r->{holder.raw=r.getText();holder.best=chooseBest(holder.best,extractBestLine(r.getText()));}).addOnCompleteListener(x->{rec.process(InputImage.fromBitmap(enhanced,0)).addOnSuccessListener(r->{holder.enh=r.getText();holder.best=chooseBest(holder.best,extractBestLine(r.getText()));}).addOnCompleteListener(y->{rec.close();String text=mergeText(holder.raw,holder.enh);String code=normalizeCandidate(holder.best);runOnUiThread(()->showResult(text,code,path));});});}
-    static class TaskHolder{String raw="",enh="",best="";}
-    String mergeText(String a,String b){if(a==null)a="";if(b==null)b="";if(a.isEmpty())return b;if(b.isEmpty())return a;return a+"\n"+b;}
-    String chooseBest(String a,String b){return b!=null&&b.length()>a.length()?b:a;}
-    String extractBestLine(String text){String best="";if(text==null)return best;for(String line:text.split("\\R")){String n=line.replaceAll("[^A-Za-z0-9]","").toUpperCase(Locale.US);if(n.length()>=6&&n.length()>best.length())best=n;}return best;}
-    String normalizeCandidate(String s){if(s==null)return "";return s.replaceAll("[^A-Za-z0-9]","").toUpperCase(Locale.US);}
-    void showResult(String text,String code,String path){EmmcRecord found=DatabaseStore.find(this,code);if(found!=null){showCard(found,text);return;}ArrayList<EmmcRecord>sim=DatabaseStore.similar(this,code);StringBuilder msg=new StringBuilder();msg.append("KODE TERDETEKSI\n").append(code.isEmpty()?"Tidak terbaca":code).append("\n\n");msg.append("OCR:\n").append(text.trim()).append("\n\n");if(sim.isEmpty())msg.append("Database: belum ada kecocokan.");else{msg.append("Kandidat terdekat:\n");for(EmmcRecord e:sim)msg.append("• ").append(e.code).append(" — ").append(e.capacity).append(" — Grade ").append(e.grade).append("\n");}new AlertDialog.Builder(this).setTitle("Hasil Scan").setMessage(msg.toString()).setPositiveButton("CARI WEB",(d,w)->web(code.isEmpty()?text:code)).setNeutralButton("SALIN",(d,w)->copy(code.isEmpty()?text:code)).setNegativeButton("TUTUP",null).show();}
-    void showCard(EmmcRecord e,String raw){String msg="Kode : "+e.code+"\nManufacturer : "+e.manufacturer+"\nKapasitas : "+e.capacity+"\neMMC Version : "+e.version+"\n\nGRADE eMMC : "+(e.grade.isEmpty()?"Belum ditentukan":e.grade)+"\nPackage : "+e.pack+"\nSumber : "+e.source+"\n\nOCR:\n"+raw;new AlertDialog.Builder(this).setTitle("eMMC Ditemukan").setMessage(msg).setPositiveButton("EDIT",(d,w)->edit(e)).setNeutralButton("CARI",(d,w)->web(e.code)).setNegativeButton("TUTUP",null).show();}
-    void edit(EmmcRecord e){LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(10),0,dp(10),0);String[]h={"Kapasitas","eMMC Version","Grade eMMC","Package","Sumber"};String[]v={e.capacity,e.version,e.grade,e.pack,e.source};EditText[]a=new EditText[5];for(int i=0;i<5;i++){a[i]=new EditText(this);a[i].setHint(h[i]);a[i].setText(v[i]);box.addView(a[i]);}new AlertDialog.Builder(this).setTitle("Edit "+e.code).setView(box).setNegativeButton("BATAL",null).setPositiveButton("SIMPAN",(d,w)->{ArrayList<EmmcRecord>list=DatabaseStore.load(this);for(EmmcRecord r:list)if(r.code.equalsIgnoreCase(e.code)){r.capacity=a[0].getText().toString().trim();r.version=a[1].getText().toString().trim();r.grade=a[2].getText().toString().trim();r.pack=a[3].getText().toString().trim();r.source=a[4].getText().toString().trim();}DatabaseStore.save(this,list);Toast.makeText(this,"Grade & data disimpan",Toast.LENGTH_SHORT).show();}).show();}
-    void copy(String s){((android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE)).setPrimaryClip(android.content.ClipData.newPlainText("eMMC",s));Toast.makeText(this,"Teks disalin",Toast.LENGTH_SHORT).show();}
-    void web(String q){if(q==null||q.trim().isEmpty())q="eMMC";startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://www.google.com/search?q="+Uri.encode(q+" eMMC datasheet"))));}
-    @Override protected void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(r==PICK&&c==RESULT_OK&&d!=null){try{InputStream in=getContentResolver().openInputStream(d.getData());File f=new File(getCacheDir(),"gallery.jpg");FileOutputStream o=new FileOutputStream(f);byte[]b=new byte[8192];int n;while((n=in.read(b))>0)o.write(b,0,n);o.close();in.close();showReview(f);}catch(Exception e){Toast.makeText(this,"Gagal membaca foto",Toast.LENGTH_LONG).show();}}}
-    @Override public void onRequestPermissionsResult(int r,@NonNull String[]p,@NonNull int[]g){super.onRequestPermissionsResult(r,p,g);if(r==CAM&&g.length>0&&g[0]==PackageManager.PERMISSION_GRANTED)startCamera();else Toast.makeText(this,"Izin kamera diperlukan",Toast.LENGTH_LONG).show();}
-    @Override protected void onDestroy(){super.onDestroy();executor.shutdown();}
+
+    private void startCamera() {
+        ListenableFuture<ProcessCameraProvider> future = ProcessCameraProvider.getInstance(this);
+        future.addListener(() -> {
+            try {
+                ProcessCameraProvider provider = future.get();
+                Preview p = new Preview.Builder().build();
+                p.setSurfaceProvider(preview.getSurfaceProvider());
+                capture = new ImageCapture.Builder().setJpegQuality(95).build();
+                provider.unbindAll();
+                provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, p, capture);
+            } catch (Exception e) {
+                result.setText("Kamera gagal: " + e.getMessage());
+            }
+        }, ContextCompat.getMainExecutor(this));
+    }
+
+    private void takePhoto() {
+        if (capture == null) { Toast.makeText(this, "Kamera belum siap", Toast.LENGTH_SHORT).show(); return; }
+        capture.takePicture(ContextCompat.getMainExecutor(this),
+            new ImageCapture.OnImageCapturedCallback() {
+                @Override public void onCaptureSuccess(@NonNull androidx.camera.core.ImageProxy image) {
+                    Bitmap bitmap = preview.getBitmap();
+                    image.close();
+                    if (bitmap == null) { result.setText("Gagal mengambil gambar"); return; }
+                    InputImage input = InputImage.fromBitmap(bitmap, 0);
+                    TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+                        .process(input)
+                        .addOnSuccessListener(text -> result.setText("Hasil OCR:\n" + text.getText()))
+                        .addOnFailureListener(e -> result.setText("OCR gagal: " + e.getMessage()));
+                }
+                @Override public void onError(@NonNull ImageCaptureException e) {
+                    result.setText("Kamera: " + e.getMessage());
+                }
+            });
+    }
+
+    @Override protected void onDestroy() {
+        super.onDestroy();
+        if (executor != null) executor.shutdown();
+    }
+
+    @Override public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] results) {
+        super.onRequestPermissionsResult(requestCode, permissions, results);
+        if (requestCode == REQ_CAMERA && results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) startCamera();
+        else result.setText("Izin kamera diperlukan untuk Scan OCR.");
+    }
 }

@@ -7,13 +7,15 @@ public class MainActivity extends Activity {
  void build(){LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setPadding(12,12,12,8);
   TextView title=tv("JEJAK TEKNISI\nGRADE eMMC",22);title.setTextColor(Color.rgb(0,120,80));title.setTypeface(null,1);root.addView(title);
   LinearLayout bar=new LinearLayout(this);search=new EditText(this);search.setHint("🔍 Cari kode / grade / kapasitas");search.setSingleLine(true);bar.addView(search,new LinearLayout.LayoutParams(0,58,1));
-  Button add=new Button(this);add.setText("+ DATA");bar.addView(add,new LinearLayout.LayoutParams(-2,58));root.addView(bar);
+  Button add=new Button(this);add.setText("+ DATA");bar.addView(add,new LinearLayout.LayoutParams(-2,58));
+  Button scan=new Button(this);scan.setText("📷 SCAN");bar.addView(scan,new LinearLayout.LayoutParams(-2,58));root.addView(bar);
   filter=new Spinner(this);String[] fs={"SEMUA GRADE","A+++","A++","A+","A+B","Pilihan 256","Pilihan 128","Pilihan 64","Pilihan 32","Pilihan 16","Pilihan 8","A+ Samsung/A Husus"};
   filter.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,fs));root.addView(filter);count=tv("",14);root.addView(count);
   ScrollView sv=new ScrollView(this);list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);sv.addView(list);root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));setContentView(root);
   search.addTextChangedListener(new android.text.TextWatcher(){public void beforeTextChanged(CharSequence s,int a,int c,int d){}public void onTextChanged(CharSequence s,int a,int b,int c){load();}public void afterTextChanged(android.text.Editable e){}});
   filter.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){public void onNothingSelected(android.widget.AdapterView<?> p){}public void onItemSelected(android.widget.AdapterView<?> p,View v,int pos,long id){load();}});
   add.setOnClickListener(v->dialog(null));
+  scan.setOnClickListener(v->startActivity(new Intent(this,ScannerActivity.class)));
  }
  void load(){data.clear();list.removeAllViews();String q=search.getText().toString().trim().toUpperCase();String g=filter.getSelectedItem()==null?"SEMUA GRADE":filter.getSelectedItem().toString();Cursor c=db.query(q,g);while(c.moveToNext())data.add(new Item(c.getLong(0),c.getString(1),c.getString(2),c.getString(3)));c.close();count.setText(data.size()+" data");
   for(Item x:data){LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.VERTICAL);row.setPadding(8,4,8,4);TextView a=tv(x.code,18);a.setTypeface(null,1);TextView b=tv(x.grade+"   •   "+(x.cap.length()>0?x.cap+" GB":"Kapasitas -"),14);row.addView(a);row.addView(b);row.setBackgroundColor(Color.rgb(245,245,245));row.setOnClickListener(v->detail(x));list.addView(row);}

@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent">
-    <ImageView android:id="@+id/preview" android:layout_width="match_parent" android:layout_height="match_parent"
-        android:scaleType="centerCrop" android:contentDescription="Pratinjau kamera"/>
+    <androidx.camera.view.PreviewView
+        android:id="@+id/preview" android:layout_width="match_parent" android:layout_height="match_parent"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_gravity="bottom" android:orientation="vertical" android:padding="16dp"
+        android:background="#CC000000">
+        <TextView android:id="@+id/result" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Arahkan kamera ke kode eMMC" android:textColor="@android:color/white" android:textSize="16sp"/>
+        <Button android:id="@+id/scan" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="SCAN &amp; BACA KODE"/>
+    </LinearLayout>
 </FrameLayout>
