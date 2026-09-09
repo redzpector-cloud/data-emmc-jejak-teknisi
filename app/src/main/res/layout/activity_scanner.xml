@@ -1,18 +1,6 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#000000">
-    <androidx.camera.view.PreviewView android:id="@+id/preview" android:layout_width="match_parent" android:layout_height="match_parent" app:scaleType="fillCenter" />
-    <View android:layout_width="match_parent" android:layout_height="150dp" android:layout_gravity="top" android:background="#66000000" />
-    <TextView android:id="@+id/txtGuide" android:text="Arahkan ke marking eMMC\nTap tulisan untuk fokus • lalu tekan FOTO" android:textColor="#FFFFFF" android:textSize="15sp" android:gravity="center" android:padding="10dp" android:layout_width="match_parent" android:layout_height="74dp" android:layout_gravity="top" android:layout_marginTop="34dp" />
-    <Button android:id="@+id/btnClose" android:text="‹" android:textSize="28sp" android:textColor="#FFFFFF" android:background="@drawable/bg_secondary" android:layout_width="52dp" android:layout_height="52dp" android:layout_gravity="start|top" android:layout_marginStart="10dp" android:layout_marginTop="28dp" />
-
-    <LinearLayout android:orientation="vertical" android:gravity="center" android:layout_width="74dp" android:layout_height="330dp" android:layout_gravity="end|center_vertical" android:layout_marginEnd="8dp">
-        <Button android:id="@+id/btnZoomIn" android:text="＋" android:textSize="25sp" android:textColor="#FFFFFF" android:background="@drawable/bg_secondary" android:layout_width="62dp" android:layout_height="58dp" />
-        <SeekBar android:id="@+id/zoomBar" android:rotation="-90" android:max="100" android:progress="0" android:layout_width="220dp" android:layout_height="56dp" android:layout_marginTop="62dp" android:layout_marginBottom="62dp" />
-        <Button android:id="@+id/btnZoomOut" android:text="－" android:textSize="25sp" android:textColor="#FFFFFF" android:background="@drawable/bg_secondary" android:layout_width="62dp" android:layout_height="58dp" />
-    </LinearLayout>
-
-    <LinearLayout android:orientation="horizontal" android:gravity="center" android:layout_width="match_parent" android:layout_height="82dp" android:layout_gravity="bottom" android:layout_marginBottom="26dp">
-        <Button android:id="@+id/btnFlash" android:text="⚡" android:textSize="20sp" android:textColor="#FFFFFF" android:background="@drawable/bg_secondary" android:layout_width="62dp" android:layout_height="58dp" android:layout_marginEnd="14dp" />
-        <Button android:id="@+id/btnPhoto" android:text="📷  FOTO" android:textSize="17sp" android:textStyle="bold" android:textColor="#06120A" android:background="@drawable/bg_primary" android:layout_width="154dp" android:layout_height="62dp" />
-        <Button android:id="@+id/btnGallery" android:text="▣" android:textSize="20sp" android:textColor="#FFFFFF" android:background="@drawable/bg_secondary" android:layout_width="62dp" android:layout_height="58dp" android:layout_marginStart="14dp" />
-    </LinearLayout>
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <ImageView android:id="@+id/preview" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:scaleType="centerCrop" android:contentDescription="Pratinjau kamera"/>
 </FrameLayout>

@@ -1,1 +1,8 @@
-<resources><color name="primary">#1565C0</color><color name="bg">#F5F7FA</color></resources>
+<resources>
+    <color name="jt_bg">#F7F8FA</color>
+    <color name="jt_surface">#FFFFFF</color>
+    <color name="jt_surface2">#EEF2F5</color>
+    <color name="jt_text">#172026</color>
+    <color name="jt_muted">#6B7280</color>
+    <color name="jt_accent">#00A878</color>
+</resources>
