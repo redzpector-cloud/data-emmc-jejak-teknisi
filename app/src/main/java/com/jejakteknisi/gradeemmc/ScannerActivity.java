@@ -138,9 +138,10 @@ public class ScannerActivity extends AppCompatActivity {
         flashButton.setBackgroundColor(0xDD111827);
         flashButton.setOnClickListener(v -> {
             if (camera != null && camera.getCameraInfo().hasFlashUnit()) {
-                Boolean torch = camera.getCameraInfo().getTorchState().getValue();
-                camera.getCameraControl().enableTorch(torch == null || !torch);
-                flashButton.setText((torch != null && torch) ? "💡 FLASH OFF" : "💡 FLASH ON");
+                Integer torchState = camera.getCameraInfo().getTorchState().getValue();
+                boolean torchOn = torchState != null && torchState == androidx.camera.core.TorchState.ON;
+                camera.getCameraControl().enableTorch(!torchOn);
+                flashButton.setText(torchOn ? "💡 FLASH OFF" : "💡 FLASH ON");
             } else {
                 Toast.makeText(this, "Flash tidak tersedia di kamera ini", Toast.LENGTH_SHORT).show();
             }
