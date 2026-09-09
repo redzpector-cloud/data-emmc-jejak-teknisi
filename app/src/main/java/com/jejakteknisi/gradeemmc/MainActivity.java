@@ -1,121 +1,117 @@
 package com.jejakteknisi.gradeemmc;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
-import android.os.Bundle;
-import android.webkit.JavascriptInterface;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.widget.FrameLayout;
-import android.widget.Toast;
-import android.Manifest;
 import android.content.pm.PackageManager;
+import android.os.Bundle;
+import android.speech.RecognizerIntent;
+import android.view.Gravity;
+import android.view.View;
+import android.widget.*;
+import java.util.*;
+
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 public class MainActivity extends Activity {
-    private WebView web;
-    private static final int SCAN_REQUEST = 2001;
-    private static final int VOICE_REQUEST = 2002;
-    private VoiceHelper voiceHelper;
+    static final int VOICE_REQ = 80;
+    LinearLayout root;
+    int dp(float v){ return (int)(v*getResources().getDisplayMetrics().density+0.5f); }
 
-    @Override protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        FrameLayout root = new FrameLayout(this);
-        web = new WebView(this);
-        WebSettings s = web.getSettings();
-        s.setJavaScriptEnabled(true);
-        s.setDomStorageEnabled(true);
-        s.setBuiltInZoomControls(false);
-        web.addJavascriptInterface(new AndroidBridge(), "Android");
-        web.loadUrl("file:///android_asset/index.html");
-        root.addView(web, new FrameLayout.LayoutParams(-1, -1));
+    TextView title(String s, float size){
+        TextView t=new TextView(this); t.setText(s); t.setTextColor(0xFFFFFFFF); t.setTextSize(size);
+        t.setTypeface(null,1); t.setPadding(dp(8),dp(6),dp(8),dp(6)); return t;
+    }
+    Button button(String text){
+        Button b=new Button(this); b.setText(text); b.setTextColor(0xFFFFFFFF);
+        b.setTextSize(14); b.setAllCaps(false); b.setMinHeight(dp(52));
+        b.setBackgroundColor(0xFF087FF5); return b;
+    }
+    @Override public void onCreate(Bundle b){
+        super.onCreate(b);
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED)
+            ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.RECORD_AUDIO},91);
+        buildHome();
+    }
+    void buildHome(){
+        root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setPadding(dp(16),dp(16),dp(16),dp(12));
+        root.setBackgroundColor(0xFF07111F);
         setContentView(root);
-        voiceHelper = new VoiceHelper();
-    }
 
-    public class AndroidBridge {
-        @JavascriptInterface
-        public void startScanner() {
-            runOnUiThread(() -> startActivityForResult(new Intent(MainActivity.this, ScannerActivity.class), SCAN_REQUEST));
-        }
+        LinearLayout head=new LinearLayout(this); head.setGravity(Gravity.CENTER_VERTICAL);
+        TextView gear=title("⚙",30); head.addView(gear,new LinearLayout.LayoutParams(dp(52),dp(60)));
+        head.addView(title("JEJAK TEKNISI\nSolusi Lengkap eMMC",21),new LinearLayout.LayoutParams(0,dp(70),1));
+        root.addView(head);
+        gear.setOnClickListener(v->showSettings());
 
-        @JavascriptInterface
-        public void startVoiceSearch() {
-            runOnUiThread(() -> {
-                if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.RECORD_AUDIO)
-                        != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(MainActivity.this,
-                            new String[]{Manifest.permission.RECORD_AUDIO}, VOICE_REQUEST);
-                    return;
-                }
-                listenForVoice();
-            });
-        }
+        LinearLayout searchRow=new LinearLayout(this); searchRow.setGravity(Gravity.CENTER_VERTICAL);
+        EditText search=new EditText(this); search.setHint("Cari kode eMMC..."); search.setHintTextColor(0xFF9FB2C8); search.setTextColor(0xFFFFFFFF);
+        search.setSingleLine(true); search.setPadding(dp(12),0,dp(8),0); search.setBackgroundColor(0xFF102B45);
+        searchRow.addView(search,new LinearLayout.LayoutParams(0,dp(52),1));
+        Button voice=button("🎙"); voice.setMinWidth(dp(58)); searchRow.addView(voice);
+        root.addView(searchRow,new LinearLayout.LayoutParams(-1,dp(58)));
+        voice.setOnClickListener(v->voiceSearch(search));
 
-        @JavascriptInterface
-        public void setVoiceRate(float rate) {
-            getSharedPreferences("settings", MODE_PRIVATE).edit().putFloat("voice_rate", rate).apply();
-            if (voiceHelper != null) voiceHelper.setRate(rate);
-        }
-
-        @JavascriptInterface
-        public void setCameraZoom(float zoom) {
-            getSharedPreferences("settings", MODE_PRIVATE).edit().putFloat("camera_zoom", zoom).apply();
-        }
-
-        @JavascriptInterface
-        public void openWebSearch(String url) {
-            runOnUiThread(() -> {
-                try { startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))); }
-                catch (Exception e) { Toast.makeText(MainActivity.this, "Browser tidak tersedia", Toast.LENGTH_SHORT).show(); }
-            });
-        }
-
-        @JavascriptInterface
-        public void speakResult(String text) {
-            runOnUiThread(() -> {
-                if (voiceHelper != null && text != null && !text.trim().isEmpty()) {
-                    voiceHelper.speak(MainActivity.this, text);
-                }
-            });
-        }
-    }
-
-    
-    private void listenForVoice() {
-        voiceHelper.startListening(this, new VoiceHelper.Listener() {
-            @Override public void onResult(String text) {
-                String safe = text == null ? "" : text.replace("\\", "\\\\").replace("'", "\\'").replace("\n", " ").replace("\r", " ");
-                web.evaluateJavascript("setVoiceResult('" + safe + "');", null);
-                Toast.makeText(MainActivity.this, "Suara: " + text, Toast.LENGTH_SHORT).show();
-            }
-            @Override public void onError(String message) {
-                Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
-            }
+        Button scan=button("📷  SCAN eMMC\nFokus tulisan • OCR • Deteksi");
+        LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,dp(78)); sp.setMargins(0,dp(14),0,dp(12));
+        root.addView(scan,sp);
+        scan.setOnClickListener(v->{
+            if(ContextCompat.checkSelfPermission(this,Manifest.permission.CAMERA)!=PackageManager.PERMISSION_GRANTED){
+                ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.CAMERA},90);
+            } else startActivity(new Intent(this,ScannerActivity.class));
         });
+
+        LinearLayout grid=new LinearLayout(this); grid.setOrientation(LinearLayout.VERTICAL);
+        String[][] labels={{"🗃️ Data eMMC","🕘 Riwayat"},{"🌐 Web Search","⚙️ Pengaturan"}};
+        for(int r=0;r<2;r++){
+            LinearLayout row=new LinearLayout(this);
+            for(int c=0;c<2;c++){
+                Button x=button(labels[r][c]); x.setBackgroundColor(0xFF0D1C2E);
+                row.addView(x,new LinearLayout.LayoutParams(0,dp(70),1));
+                if(r==0&&c==0) x.setOnClickListener(v->showDatabase());
+                if(r==0&&c==1) x.setOnClickListener(v->showHistory());
+                if(r==1&&c==0) x.setOnClickListener(v->webSearch(""));
+                if(r==1&&c==1) x.setOnClickListener(v->showSettings());
+            }
+            grid.addView(row);
+        }
+        root.addView(grid);
+        TextView tip=title("\nKenali eMMC • Tentukan kapasitas & grade • Simpan hasil",14);
+        tip.setTextColor(0xFF9FB2C8); root.addView(tip);
     }
 
-    @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == VOICE_REQUEST && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            listenForVoice();
+    void voiceSearch(EditText target){
+        try{
+            Intent i=new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+            i.putExtra(RecognizerIntent.EXTRA_LANGUAGE,"id-ID");
+            startActivityForResult(i,VOICE_REQ);
+        }catch(Exception e){ Toast.makeText(this,"Voice search tidak tersedia",Toast.LENGTH_SHORT).show(); }
+    }
+    @Override protected void onActivityResult(int r,int c,Intent d){
+        super.onActivityResult(r,c,d);
+        if(r==VOICE_REQ&&c==RESULT_OK&&d!=null){
+            ArrayList<String> a=d.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+            if(a!=null&&!a.isEmpty()) webSearch(a.get(0));
         }
     }
-
-    @Override protected void onDestroy() {
-        if (voiceHelper != null) voiceHelper.release();
-        super.onDestroy();
+    void webSearch(String q){
+        String url="https://www.google.com/search?q="+android.net.Uri.encode((q==null?"":q)+" eMMC datasheet capacity");
+        startActivity(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse(url)));
     }
-
-    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == SCAN_REQUEST && resultCode == RESULT_OK && data != null) {
-            String text = data.getStringExtra("ocr_text");
-            if (text == null || text.trim().isEmpty()) return;
-            String safe = text.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "\\r");
-            web.evaluateJavascript("showOcrResult('" + safe + "');", null);
-            Toast.makeText(this, "Tulisan terdeteksi. Pilih teks lalu Copy atau Cari.", Toast.LENGTH_SHORT).show();
-        }
+    void showDatabase(){
+        ArrayList<EmmcRecord> list=DatabaseStore.load(this);
+        StringBuilder s=new StringBuilder();
+        for(EmmcRecord e:list) s.append(e.code).append(" • ").append(e.manufacturer).append(" • ").append(e.capacity).append(" • Grade ").append(e.grade.isEmpty()?"-":e.grade).append("\n\n");
+        new AlertDialog.Builder(this).setTitle("Data eMMC ("+list.size()+")").setMessage(s.length()==0?"Belum ada data.":s.toString()).setPositiveButton("OK",null).show();
+    }
+    void showHistory(){
+        new AlertDialog.Builder(this).setTitle("Riwayat").setMessage("Riwayat pencarian akan tersimpan pada versi lanjutan.").setPositiveButton("OK",null).show();
+    }
+    void showSettings(){
+        new AlertDialog.Builder(this).setTitle("Pengaturan")
+            .setMessage("Kamera: Fokus tulisan + Tap-to-focus\nOCR: Foto manual\nPencarian: Database lokal → web\nGrade: klasifikasi eMMC, bukan kerusakan")
+            .setPositiveButton("OK",null).show();
     }
 }

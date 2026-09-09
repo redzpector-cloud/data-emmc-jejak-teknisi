@@ -1,0 +1,9 @@
+<resources>
+    <color name="navy">#07111F</color>
+    <color name="panel">#0D1C2E</color>
+    <color name="blue">#087FF5</color>
+    <color name="cyan">#00C8FF</color>
+    <color name="green">#00D084</color>
+    <color name="white">#FFFFFF</color>
+    <color name="muted">#9FB2C8</color>
+</resources>

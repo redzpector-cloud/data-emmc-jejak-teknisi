@@ -1,0 +1,137 @@
+[
+  {
+    "code": "KLM8G1WEMB-B031",
+    "manufacturer": "Samsung",
+    "capacity": "8 GB",
+    "version": "5.0",
+    "grade": "",
+    "pack": "11.5x13x0.8",
+    "source": "Samsung official"
+  },
+  {
+    "code": "KLMAG2WEMB-B031",
+    "manufacturer": "Samsung",
+    "capacity": "16 GB",
+    "version": "5.0",
+    "grade": "",
+    "pack": "11.5x13x0.8",
+    "source": "Samsung official"
+  },
+  {
+    "code": "KLMBG4WEBC-B031",
+    "manufacturer": "Samsung",
+    "capacity": "32 GB",
+    "version": "5.0",
+    "grade": "",
+    "pack": "11.5x13x1.0",
+    "source": "Samsung official"
+  },
+  {
+    "code": "KLMCG8WEBC-B031",
+    "manufacturer": "Samsung",
+    "capacity": "64 GB",
+    "version": "5.0",
+    "grade": "",
+    "pack": "11.5x13x1.0",
+    "source": "Samsung official"
+  },
+  {
+    "code": "THGBMUG6C1LBAIL",
+    "manufacturer": "KIOXIA",
+    "capacity": "8 GB",
+    "version": "5.1",
+    "grade": "",
+    "pack": "11.5x13x0.8",
+    "source": "KIOXIA official"
+  },
+  {
+    "code": "THGBMUG7C1LBAIL",
+    "manufacturer": "KIOXIA",
+    "capacity": "16 GB",
+    "version": "5.1",
+    "grade": "",
+    "pack": "11.5x13x0.8",
+    "source": "KIOXIA official"
+  },
+  {
+    "code": "THGBMUG8C2LBAIL",
+    "manufacturer": "KIOXIA",
+    "capacity": "32 GB",
+    "version": "5.1",
+    "grade": "",
+    "pack": "11.5x13x0.8",
+    "source": "KIOXIA official"
+  },
+  {
+    "code": "THGAMVG9T23BAIL",
+    "manufacturer": "KIOXIA",
+    "capacity": "64 GB",
+    "version": "5.1",
+    "grade": "",
+    "pack": "11.5x13x0.8",
+    "source": "KIOXIA official"
+  },
+  {
+    "code": "THGAMVT0T43BAIR",
+    "manufacturer": "KIOXIA",
+    "capacity": "128 GB",
+    "version": "5.1",
+    "grade": "",
+    "pack": "11.5x13x1.0",
+    "source": "KIOXIA official"
+  },
+  {
+    "code": "MTFC256GBCAQTC-IT",
+    "manufacturer": "Micron",
+    "capacity": "256 GB",
+    "version": "5.1",
+    "grade": "",
+    "pack": "11.5x13x1.3",
+    "source": "Micron official"
+  },
+  {
+    "code": "MTFC32GBCAQTC-IT",
+    "manufacturer": "Micron",
+    "capacity": "32 GB",
+    "version": "5.1",
+    "grade": "",
+    "pack": "11.5x13x1.3",
+    "source": "Micron official"
+  },
+  {
+    "code": "EMMC32G-TS0A",
+    "manufacturer": "Kingston",
+    "capacity": "32 GB",
+    "version": "5.1",
+    "grade": "",
+    "pack": "11.5x13x1.0",
+    "source": "Kingston official"
+  },
+  {
+    "code": "EMMC64G-TY29",
+    "manufacturer": "Kingston",
+    "capacity": "64 GB",
+    "version": "5.1",
+    "grade": "",
+    "pack": "11.5x13x0.8",
+    "source": "Kingston official"
+  },
+  {
+    "code": "EMMC128-TY29",
+    "manufacturer": "Kingston",
+    "capacity": "128 GB",
+    "version": "5.1",
+    "grade": "",
+    "pack": "11.5x13x0.8",
+    "source": "Kingston official"
+  },
+  {
+    "code": "EMMC256-TY29",
+    "manufacturer": "Kingston",
+    "capacity": "256 GB",
+    "version": "5.1",
+    "grade": "",
+    "pack": "11.5x13x1.0",
+    "source": "Kingston official"
+  }
+]

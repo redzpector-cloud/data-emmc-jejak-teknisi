@@ -1,529 +1,160 @@
-
-// GOOGLE_LENS_STYLE_FLOW:
-// Photo -> OCR -> selectable/editable text -> COPY or SEARCH.
-// SEARCH checks the local database first; if no match, open web search using
-// the cleaned selected text / eMMC part number. Web results are for reference
-// and must be reviewed before saving Manufacturer, Capacity, Grade or Version.
-
-// PHOTO_TEXT_SEARCH_FLOW_V1
-// Intended flow:
-// 1) Take photo manually.
-// 2) Run OCR on the captured photo (not continuous camera OCR).
-// 3) Show extracted text in an editable selection screen.
-// 4) User can COPY selected/full text.
-// 5) User taps SEARCH to search the selected text, similar to Google Lens text search.
-// 6) Search should use the cleaned OCR text; eMMC code/part number gets priority.
-// 7) Keep camera controls: tap-to-focus, vertical zoom, flash, and elevated shutter.
-
 package com.jejakteknisi.gradeemmc;
 
 import android.Manifest;
-import android.content.Intent;
+import android.app.*;
+import android.content.*;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.net.Uri;
-import android.os.Bundle;
-import android.view.Gravity;
-import android.view.View;
-import android.widget.Button;
-import android.widget.FrameLayout;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-import android.widget.Toast;
-
+import android.os.*;
+import android.provider.Settings;
+import android.view.*;
+import android.widget.*;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.Camera;
-import androidx.camera.core.CameraSelector;
-import androidx.camera.core.ImageCapture;
-import androidx.camera.core.ImageCaptureException;
-import androidx.camera.core.FocusMeteringAction;
-import androidx.camera.core.MeteringPoint;
-import androidx.camera.core.MeteringPointFactory;
-import androidx.camera.core.Preview;
-import androidx.camera.core.TorchState;
+import androidx.camera.core.*;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mlkit.vision.common.InputImage;
-import com.google.mlkit.vision.text.TextRecognition;
-import com.google.mlkit.vision.text.TextRecognizer;
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
+import com.google.mlkit.vision.text.*;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-
-/**
- * Manual eMMC camera:
- * camera preview -> user presses FOTO & BACA -> photo -> OCR.
- * No continuous OCR and no target-IC overlay.
- */
 public class ScannerActivity extends AppCompatActivity {
-    private static final int CAMERA_REQUEST = 3001;
+    PreviewView preview;
+    ImageCapture capture;
+    Camera camera;
+    ExecutorService executor=Executors.newSingleThreadExecutor();
+    TextView zoomText, focusState;
+    float zoom=1f;
+    int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
+    Button b(String s){ Button x=new Button(this); x.setText(s); x.setTextColor(Color.WHITE); x.setTextSize(14); x.setAllCaps(false); x.setMinHeight(dp(52)); return x; }
 
-    private PreviewView previewView;
-    private TextView status;
-    private Button captureButton;
-    private Button flashButton;
-    private TextView zoomLabel;
+    @Override public void onCreate(Bundle b){
+        super.onCreate(b);
+        getWindow().setNavigationBarColor(Color.BLACK);
+        FrameLayout root=new FrameLayout(this); root.setBackgroundColor(Color.BLACK); setContentView(root);
 
-    private TextRecognizer recognizer;
-    private ImageCapture imageCapture;
-    private Camera camera;
-    private float zoomRatio = 1.0f;
+        preview=new PreviewView(this); preview.setScaleType(PreviewView.ScaleType.FILL_CENTER); root.addView(preview,new FrameLayout.LayoutParams(-1,-1));
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        // Top bar
+        LinearLayout top=new LinearLayout(this); top.setGravity(Gravity.CENTER_VERTICAL); top.setPadding(dp(8),dp(8),dp(8),dp(8)); top.setBackgroundColor(0xAA07111F);
+        Button close=b("✕"); close.setOnClickListener(v->finish());
+        top.addView(close,new LinearLayout.LayoutParams(dp(58),dp(58)));
+        TextView tt=new TextView(this); tt.setText("Fokus Tulisan eMMC\nKetuk tulisan untuk fokus"); tt.setTextColor(Color.WHITE); tt.setTextSize(18); tt.setTypeface(null,1);
+        top.addView(tt,new LinearLayout.LayoutParams(0,dp(64),1));
+        Button flash=b("⚡"); top.addView(flash,new LinearLayout.LayoutParams(dp(64),dp(58)));
+        FrameLayout.LayoutParams tp=new FrameLayout.LayoutParams(-1,dp(76),Gravity.TOP); root.addView(top,tp);
+        flash.setOnClickListener(v->{ if(camera!=null&&camera.getCameraInfo().hasFlashUnit()) camera.getCameraControl().enableTorch(!Boolean.TRUE.equals(camera.getCameraInfo().getTorchState().getValue())); });
 
-        // IMPORTANT: read preferences only after Activity is attached.
-        zoomRatio = getSharedPreferences("settings", MODE_PRIVATE)
-                .getFloat("camera_zoom", 1.0f);
+        // Focus brackets overlay
+        TextView brackets=new TextView(this); brackets.setText("┌────────────┐\n│            │\n│     ⊕      │\n│            │\n└────────────┘"); brackets.setTextColor(0xFF00E58A); brackets.setTextSize(30); brackets.setGravity(Gravity.CENTER);
+        FrameLayout.LayoutParams bp=new FrameLayout.LayoutParams(dp(310),dp(250),Gravity.CENTER); root.addView(brackets,bp);
 
-        recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
-        buildCameraUi();
+        // Zoom vertical
+        LinearLayout zoomBox=new LinearLayout(this); zoomBox.setOrientation(LinearLayout.VERTICAL); zoomBox.setGravity(Gravity.CENTER);
+        Button plus=b("+"); zoomText=b("1×"); Button minus=b("−");
+        plus.setTextSize(25); minus.setTextSize(25); zoomText.setTextSize(16);
+        zoomBox.addView(plus,new LinearLayout.LayoutParams(dp(74),dp(62)));
+        zoomBox.addView(zoomText,new LinearLayout.LayoutParams(dp(74),dp(58)));
+        zoomBox.addView(minus,new LinearLayout.LayoutParams(dp(74),dp(62)));
+        FrameLayout.LayoutParams zp=new FrameLayout.LayoutParams(dp(82),dp(190),Gravity.RIGHT|Gravity.CENTER_VERTICAL); zp.setMargins(0,0,dp(10),dp(20)); root.addView(zoomBox,zp);
+        plus.setOnClickListener(v->setZoom(Math.min(8f,zoom+.5f)));
+        minus.setOnClickListener(v->setZoom(Math.max(1f,zoom-.5f)));
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                == PackageManager.PERMISSION_GRANTED) {
-            startCamera();
-        } else {
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[]{Manifest.permission.CAMERA},
-                    CAMERA_REQUEST
-            );
-        }
-    }
+        focusState=new TextView(this); focusState.setText("● Auto Fokus aktif"); focusState.setTextColor(Color.WHITE); focusState.setTextSize(15); focusState.setGravity(Gravity.CENTER); focusState.setBackgroundColor(0xAA006B47);
+        FrameLayout.LayoutParams fp=new FrameLayout.LayoutParams(dp(260),dp(52),Gravity.CENTER_HORIZONTAL|Gravity.BOTTOM); fp.setMargins(0,0,0,dp(145)); root.addView(focusState,fp);
 
-    private void buildCameraUi() {
-        FrameLayout root = new FrameLayout(this);
-        root.setBackgroundColor(Color.BLACK);
+        Button shutter=b("📷  FOTO & DETEKSI TULISAN"); shutter.setTextSize(17); shutter.setBackgroundColor(0xFF087FF5);
+        FrameLayout.LayoutParams sp=new FrameLayout.LayoutParams(-1,dp(64),Gravity.BOTTOM); sp.setMargins(dp(18),0,dp(18),dp(70)); root.addView(shutter,sp);
+        shutter.setOnClickListener(v->takePhoto());
 
-        previewView = new PreviewView(this);
-        previewView.setScaleType(PreviewView.ScaleType.FILL_CENTER);
-        root.addView(previewView, new FrameLayout.LayoutParams(-1, -1));
-
-        // TAP-TO-FOCUS: tap any point on the preview to focus the eMMC lettering.
-        previewView.setOnTouchListener((v, event) -> {
-            if (event.getAction() == android.view.MotionEvent.ACTION_UP && camera != null) {
-                try {
-                    MeteringPointFactory factory =
-                            previewView.getMeteringPointFactory();
-                    MeteringPoint point = factory.createPoint(event.getX(), event.getY());
-                    FocusMeteringAction action = new FocusMeteringAction.Builder(point)
-                            .setAutoCancelDuration(3, java.util.concurrent.TimeUnit.SECONDS)
-                            .build();
-                    camera.getCameraControl().startFocusAndMetering(action);
-                    status.setText("Fokus diatur. Jika tulisan sudah jelas, tekan FOTO & BACA.");
-                } catch (Exception ignored) {
-                    status.setText("Fokus otomatis tidak tersedia. Coba dekatkan kamera.");
-                }
-            }
+        preview.setOnTouchListener((v,e)->{
+            if(e.getAction()==MotionEvent.ACTION_UP) focusAt(e.getX(),e.getY());
             return true;
         });
-
-        // TOP BAR
-        LinearLayout topBar = new LinearLayout(this);
-        topBar.setOrientation(LinearLayout.HORIZONTAL);
-        topBar.setGravity(Gravity.CENTER_VERTICAL);
-        topBar.setPadding(8, 10, 8, 10);
-        topBar.setBackgroundColor(0xDD07111F);
-
-        Button close = new Button(this);
-        close.setText("‹");
-        close.setTextSize(32);
-        close.setTextColor(Color.WHITE);
-        close.setAllCaps(false);
-        close.setBackgroundColor(Color.TRANSPARENT);
-        close.setOnClickListener(v -> finish());
-        topBar.addView(close, new LinearLayout.LayoutParams(58, 58));
-
-        TextView title = new TextView(this);
-        title.setText("Scan eMMC");
-        title.setTextColor(Color.WHITE);
-        title.setTextSize(20);
-        title.setTypeface(null, android.graphics.Typeface.BOLD);
-        title.setGravity(Gravity.CENTER_VERTICAL);
-        topBar.addView(title, new LinearLayout.LayoutParams(0, 58, 1));
-
-        flashButton = new Button(this);
-        flashButton.setText("💡");
-        flashButton.setTextSize(21);
-        flashButton.setTextColor(Color.WHITE);
-        flashButton.setAllCaps(false);
-        flashButton.setBackgroundColor(0xAA17263A);
-        flashButton.setOnClickListener(v -> toggleFlash());
-        topBar.addView(flashButton, new LinearLayout.LayoutParams(58, 58));
-
-        FrameLayout.LayoutParams topParams = new FrameLayout.LayoutParams(-1, 78);
-        topParams.gravity = Gravity.TOP;
-        root.addView(topBar, topParams);
-
-        status = new TextView(this);
-        status.setText("Arahkan kamera ke tulisan eMMC");
-        status.setTextColor(Color.WHITE);
-        status.setTextSize(13);
-        status.setGravity(Gravity.CENTER);
-        status.setPadding(16, 8, 16, 8);
-        status.setBackgroundColor(0xAA07111F);
-        FrameLayout.LayoutParams statusParams = new FrameLayout.LayoutParams(-2, -2);
-        statusParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-        statusParams.topMargin = 80;
-        root.addView(status, statusParams);
-
-        // RIGHT-SIDE ZOOM: 0.5x steps, plus quick presets.
-        LinearLayout zoomBar = new LinearLayout(this);
-        zoomBar.setOrientation(LinearLayout.VERTICAL);
-        zoomBar.setGravity(Gravity.CENTER);
-        zoomBar.setPadding(8, 10, 8, 10);
-        zoomBar.setBackgroundColor(0xCC101C2C);
-
-        Button zoomIn = cameraButton("+");
-        Button zoomOut = cameraButton("−");
-        zoomLabel = new TextView(this);
-        zoomLabel.setTextColor(Color.WHITE);
-        zoomLabel.setTextSize(13);
-        zoomLabel.setGravity(Gravity.CENTER);
-        zoomLabel.setPadding(2, 4, 2, 4);
-        updateZoomLabel();
-
-        Button zoom05 = cameraButton("0.5×");
-        Button zoom1 = cameraButton("1×");
-        Button zoom2 = cameraButton("2×");
-        Button zoom3 = cameraButton("3×");
-        Button zoom4 = cameraButton("4×");
-
-        zoomBar.addView(zoomIn, new LinearLayout.LayoutParams(100, 82));
-        zoomBar.addView(zoomLabel, new LinearLayout.LayoutParams(100, 54));
-        zoomBar.addView(zoomOut, new LinearLayout.LayoutParams(100, 82));
-        zoomBar.addView(zoom05, new LinearLayout.LayoutParams(100, 64));
-        zoomBar.addView(zoom1, new LinearLayout.LayoutParams(100, 64));
-        zoomBar.addView(zoom2, new LinearLayout.LayoutParams(100, 64));
-        zoomBar.addView(zoom3, new LinearLayout.LayoutParams(100, 64));
-        zoomBar.addView(zoom4, new LinearLayout.LayoutParams(100, 64));
-
-        FrameLayout.LayoutParams zoomParams = new FrameLayout.LayoutParams(116, 650);
-        zoomParams.gravity = Gravity.CENTER_VERTICAL | Gravity.END;
-        zoomParams.rightMargin = 14;
-        root.addView(zoomBar, zoomParams);
-
-        zoomOut.setOnClickListener(v -> changeZoom(-0.5f));
-        zoomIn.setOnClickListener(v -> changeZoom(0.5f));
-        zoom05.setOnClickListener(v -> setZoomPreset(0.5f));
-        zoom1.setOnClickListener(v -> setZoomPreset(1.0f));
-        zoom2.setOnClickListener(v -> setZoomPreset(2.0f));
-        zoom3.setOnClickListener(v -> setZoomPreset(3.0f));
-        zoom4.setOnClickListener(v -> setZoomPreset(4.0f));
-
-        // BOTTOM CAMERA BUTTON: use a large Button with a solid background and high z-order.
-        captureButton = new Button(this);
-        captureButton.setText("📷  FOTO & BACA");
-        captureButton.setTextSize(18);
-        captureButton.setTextColor(Color.WHITE);
-        captureButton.setAllCaps(false);
-        captureButton.setGravity(Gravity.CENTER);
-        captureButton.setBackgroundColor(0xFF078DFF);
-        captureButton.setPadding(12, 0, 12, 0);
-        captureButton.setMinHeight(92);
-        captureButton.setOnClickListener(v -> takePhoto());
-
-        FrameLayout.LayoutParams captureParams = new FrameLayout.LayoutParams(-1, 92);
-        captureParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-        captureParams.leftMargin = 24;
-        captureParams.rightMargin = 24;
-        captureParams.bottomMargin = 190;
-        root.addView(captureButton, captureParams);
-
-        TextView hint = new TextView(this);
-        hint.setText("Tekan FOTO & BACA setelah tulisan eMMC fokus");
-        hint.setTextColor(0xEEFFFFFF);
-        hint.setTextSize(11);
-        hint.setGravity(Gravity.CENTER);
-        FrameLayout.LayoutParams hintParams = new FrameLayout.LayoutParams(-1, 28);
-        hintParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
-        hintParams.leftMargin = 70;
-        hintParams.rightMargin = 70;
-        hintParams.bottomMargin = 282;
-        root.addView(hint, hintParams);
-
-        setContentView(root);
+        startCamera();
     }
-
-    private Button cameraButton(String text) {
-        Button b = new Button(this);
-        b.setText(text);
-        b.setTextSize(14);
-        b.setTextColor(Color.WHITE);
-        b.setAllCaps(false);
-        b.setGravity(Gravity.CENTER);
-        b.setBackgroundColor(0xFF1B314A);
-        b.setPadding(0, 0, 0, 0);
-        return b;
+    void setZoom(float z){zoom=z;if(camera!=null)camera.getCameraControl().setLinearZoom((z-1f)/7f);zoomText.setText(String.format(Locale.US,"%.1f×",z));}
+    void focusAt(float x,float y){
+        if(camera==null)return;
+        MeteringPointFactory f=preview.getMeteringPointFactory();
+        FocusMeteringAction a=new FocusMeteringAction.Builder(f.createPoint(x,y),FocusMeteringAction.FLAG_AF)
+            .setAutoCancelDuration(3,java.util.concurrent.TimeUnit.SECONDS).build();
+        camera.getCameraControl().startFocusAndMetering(a);
+        focusState.setText("✓ Fokus dikunci pada tulisan");
     }
-
-    private void setZoomPreset(float value) {
-        if (camera == null) {
-            Toast.makeText(this, "Kamera belum siap.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        Float maxValue = camera.getCameraInfo().getZoomState().getValue() == null
-                ? 1.0f
-                : camera.getCameraInfo().getZoomState().getValue().getMaxZoomRatio();
-        float max = maxValue == null ? 1.0f : maxValue;
-        zoomRatio = Math.max(1.0f, Math.min(max, value));
-        camera.getCameraControl().setZoomRatio(zoomRatio);
-        updateZoomLabel();
-        getSharedPreferences("settings", MODE_PRIVATE).edit()
-                .putFloat("camera_zoom", zoomRatio).apply();
+    void startCamera(){
+        ListenableFuture<ProcessCameraProvider> future=ProcessCameraProvider.getInstance(this);
+        future.addListener(()->{
+            try{
+                ProcessCameraProvider p=future.get();
+                Preview pv=new Preview.Builder().build(); pv.setSurfaceProvider(preview.getSurfaceProvider());
+                capture=new ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY).build();
+                CameraSelector sel=CameraSelector.DEFAULT_BACK_CAMERA;
+                p.unbindAll(); camera=p.bindToLifecycle(this,sel,pv,capture);
+                setZoom(zoom);
+                focusAt(preview.getWidth()/2f,preview.getHeight()/2f);
+            }catch(Exception e){ Toast.makeText(this,"Kamera gagal dibuka: "+e.getMessage(),Toast.LENGTH_LONG).show(); }
+        },ContextCompat.getMainExecutor(this));
     }
-
-    private void startCamera() {
-        status.setText("Menyiapkan kamera...");
-
-        ListenableFuture<ProcessCameraProvider> future =
-                ProcessCameraProvider.getInstance(this);
-
-        future.addListener(() -> {
-            try {
-                ProcessCameraProvider provider = future.get();
-
-                Preview preview = new Preview.Builder().build();
-                preview.setSurfaceProvider(previewView.getSurfaceProvider());
-
-                imageCapture = new ImageCapture.Builder()
-                        .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-                        .setJpegQuality(100)
-                        .build();
-
-                provider.unbindAll();
-
-                camera = provider.bindToLifecycle(
-                        this,
-                        CameraSelector.DEFAULT_BACK_CAMERA,
-                        preview,
-                        imageCapture
-                );
-
-                float max = camera.getCameraInfo().getZoomState().getValue() != null
-                        ? camera.getCameraInfo().getZoomState().getValue().getMaxZoomRatio()
-                        : 1.0f;
-
-                zoomRatio = Math.max(1.0f, Math.min(zoomRatio, max));
-                camera.getCameraControl().setZoomRatio(zoomRatio);
-                updateZoomLabel();
-
-                flashButton.setEnabled(camera.getCameraInfo().hasFlashUnit());
-                status.setText("Kamera siap.\nArahkan ke tulisan eMMC lalu tekan FOTO & BACA.");
-            } catch (Exception e) {
-                status.setText("Kamera gagal dibuka.\n" + safeMessage(e));
-                Toast.makeText(
-                        this,
-                        "Kamera gagal dibuka: " + safeMessage(e),
-                        Toast.LENGTH_LONG
-                ).show();
-            }
-        }, ContextCompat.getMainExecutor(this));
+    void takePhoto(){
+        if(capture==null)return;
+        focusState.setText("● Memfokuskan tulisan...");
+        focusAt(preview.getWidth()/2f,preview.getHeight()/2f);
+        new Handler().postDelayed(()->{
+            ImageCapture.OutputFileOptions o=new ImageCapture.OutputFileOptions.Builder(createTempFile()).build();
+            capture.takePicture(o,executor,new ImageCapture.OnImageSavedCallback(){
+                @Override public void onImageSaved(@NonNull ImageCapture.OutputFileResults r){ runOnUiThread(()->processOCR(o)); }
+                @Override public void onError(@NonNull ImageCaptureException e){runOnUiThread(()->Toast.makeText(ScannerActivity.this,"Gagal foto: "+e.getMessage(),Toast.LENGTH_LONG).show());}
+            });
+        },450);
     }
-
-    private void changeZoom(float delta) {
-        if (camera == null) {
-            Toast.makeText(this, "Kamera belum siap.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        Float maxValue = camera.getCameraInfo().getZoomState().getValue() == null
-                ? 1.0f
-                : camera.getCameraInfo().getZoomState().getValue().getMaxZoomRatio();
-
-        float max = maxValue == null ? 1.0f : maxValue;
-        zoomRatio = Math.max(1.0f, Math.min(max, zoomRatio + delta));
-        camera.getCameraControl().setZoomRatio(zoomRatio);
-        updateZoomLabel();
-
-        getSharedPreferences("settings", MODE_PRIVATE)
-                .edit()
-                .putFloat("camera_zoom", zoomRatio)
-                .apply();
+    java.io.File lastFile;
+    java.io.File createTempFile(){
+        try{ lastFile=java.io.File.createTempFile("emmc_scan_",".jpg",getCacheDir()); return lastFile; }
+        catch(Exception e){throw new RuntimeException(e);}
     }
-
-    private void updateZoomLabel() {
-        if (zoomLabel != null) {
-            zoomLabel.setText(String.format(Locale.US, "%.1fx", zoomRatio));
+    void processOCR(ImageCapture.OutputFileOptions o){
+        if(lastFile==null || !lastFile.exists()){Toast.makeText(this,"Foto tersimpan tetapi file tidak ditemukan",Toast.LENGTH_SHORT).show();return;}
+        try{
+            InputImage img=InputImage.fromFilePath(this,android.net.Uri.fromFile(lastFile));
+            TextRecognizer rec=TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+            rec.process(img).addOnSuccessListener(result->showOCR(result.getText())).addOnFailureListener(e->Toast.makeText(this,"OCR gagal: "+e.getMessage(),Toast.LENGTH_LONG).show());
+        }catch(Exception e){Toast.makeText(this,"Tidak dapat membaca foto: "+e.getMessage(),Toast.LENGTH_LONG).show();}
+    }
+    void showOCR(String text){
+        final EditText edit=new EditText(this); edit.setText(text); edit.setTextColor(Color.WHITE); edit.setTextSize(18); edit.setGravity(Gravity.TOP); edit.setMinLines(6);
+        edit.setSelectAllOnFocus(false);
+        LinearLayout box=new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL); box.setPadding(dp(10),dp(5),dp(10),0);
+        TextView hint=new TextView(this); hint.setText("Pilih/edit kode eMMC yang ingin dicari"); hint.setTextColor(0xFF9FB2C8);
+        box.addView(hint); box.addView(edit,new LinearLayout.LayoutParams(-1,dp(180)));
+        AlertDialog dlg=new AlertDialog.Builder(this).setTitle("Hasil Deteksi Tulisan").setView(box)
+            .setNegativeButton("Tutup",null).create();
+        dlg.setButton(AlertDialog.BUTTON_NEUTRAL,"COPY",(d,w)->{
+            ((android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE)).setPrimaryClip(android.content.ClipData.newPlainText("eMMC",edit.getText().toString()));
+            Toast.makeText(this,"Tulisan disalin",Toast.LENGTH_SHORT).show();
+        });
+        dlg.setButton(AlertDialog.BUTTON_POSITIVE,"CARI",(d,w)->searchLocalOrWeb(edit.getText().toString()));
+        dlg.show();
+    }
+    void searchLocalOrWeb(String q){
+        String clean=q.trim().replaceAll("\\s+"," ");
+        ArrayList<EmmcRecord> list=DatabaseStore.load(this);
+        EmmcRecord found=null;
+        for(EmmcRecord e:list) if(clean.toUpperCase(Locale.US).contains(e.code.toUpperCase(Locale.US)) || e.code.equalsIgnoreCase(clean)){found=e;break;}
+        if(found!=null){
+            new AlertDialog.Builder(this).setTitle(found.code)
+                .setMessage("Manufacturer: "+found.manufacturer+"\nKapasitas: "+found.capacity+"\neMMC Version: "+found.version+
+                    "\nGrade: "+(found.grade.isEmpty()?"-":found.grade)+"\nPackage: "+found.pack+"\nSumber: "+found.source)
+                .setPositiveButton("EDIT",null).setNegativeButton("OK",null).show();
+        }else{
+            String url="https://www.google.com/search?q="+android.net.Uri.encode(clean+" eMMC datasheet capacity grade");
+            startActivity(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse(url)));
         }
     }
-
-    private void toggleFlash() {
-        if (camera == null || !camera.getCameraInfo().hasFlashUnit()) {
-            Toast.makeText(this, "Flash tidak tersedia.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        Integer state = camera.getCameraInfo().getTorchState().getValue();
-        boolean isOn = state != null && state == TorchState.ON;
-        camera.getCameraControl().enableTorch(!isOn);
-        flashButton.setText(isOn ? "💡 Flash" : "💡 Flash ON");
-    }
-
-    private void takePhoto() {
-        if (camera == null || imageCapture == null) {
-            Toast.makeText(this, "Kamera belum siap. Tunggu sebentar.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        captureButton.setEnabled(false);
-        captureButton.setText("⏳ MEMPROSES...");
-        status.setText("Mengambil foto...\nJangan gerakkan kamera.");
-
-        // Trigger a short center autofocus before capturing for small eMMC markings.
-        try {
-            MeteringPointFactory factory = previewView.getMeteringPointFactory();
-            MeteringPoint center = factory.createPoint(
-                    previewView.getWidth() / 2f, previewView.getHeight() / 2f);
-            camera.getCameraControl().startFocusAndMetering(
-                    new FocusMeteringAction.Builder(center)
-                            .setAutoCancelDuration(2, java.util.concurrent.TimeUnit.SECONDS)
-                            .build());
-        } catch (Exception ignored) {}
-
-        String fileName = "emmc_" +
-                new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) +
-                ".jpg";
-
-        File photoFile = new File(getCacheDir(), fileName);
-
-        ImageCapture.OutputFileOptions output =
-                new ImageCapture.OutputFileOptions.Builder(photoFile).build();
-
-        imageCapture.takePicture(
-                output,
-                ContextCompat.getMainExecutor(this),
-                new ImageCapture.OnImageSavedCallback() {
-                    @Override
-                    public void onImageSaved(
-                            @NonNull ImageCapture.OutputFileResults outputFileResults) {
-                        readTextFromPhoto(photoFile);
-                    }
-
-                    @Override
-                    public void onError(@NonNull ImageCaptureException exception) {
-                        resetCaptureButton("📷  FOTO & BACA LAGI");
-                        status.setText("Foto gagal.\nCoba lagi dengan fokus dan cahaya lebih baik.");
-                        Toast.makeText(
-                                ScannerActivity.this,
-                                "Gagal mengambil foto: " + safeMessage(exception),
-                                Toast.LENGTH_LONG
-                        ).show();
-                    }
-                }
-        );
-    }
-
-    private void readTextFromPhoto(File photoFile) {
-        try {
-            InputImage image = InputImage.fromFilePath(this, Uri.fromFile(photoFile));
-
-            recognizer.process(image)
-                    .addOnSuccessListener(result -> {
-                        String fullText = result.getText() == null ? "" : result.getText().trim();
-                        String candidate = extractCandidate(fullText);
-
-                        if (fullText.length() >= 3) {
-                            Intent out = new Intent();
-                            out.putExtra("ocr_text", fullText);
-                            out.putExtra("ocr_candidate", candidate == null ? "" : candidate);
-                            setResult(RESULT_OK, out);
-                            photoFile.delete();
-                            finish();
-                        } else {
-                            resetCaptureButton("📷  FOTO & BACA LAGI");
-                            status.setText(
-                                    "Tulisan belum terbaca.\n" +
-                                    "Coba zoom, dekatkan kamera, lalu foto lagi."
-                            );
-                            photoFile.delete();
-                        }
-                    })
-                    .addOnFailureListener(e -> {
-                        resetCaptureButton("📷  FOTO & BACA LAGI");
-                        status.setText("OCR gagal.\nCoba foto lagi dengan tulisan lebih jelas.");
-                        photoFile.delete();
-                    });
-        } catch (Exception e) {
-            resetCaptureButton("📷  FOTO & BACA LAGI");
-            status.setText("Foto tidak dapat diproses.\nCoba lagi.");
-            photoFile.delete();
-        }
-    }
-
-    private void resetCaptureButton(String label) {
-        captureButton.setEnabled(true);
-        captureButton.setText(label);
-    }
-
-    private String extractCandidate(String text) {
-        if (text == null) return null;
-
-        String cleaned = text.toUpperCase(Locale.US)
-                .replaceAll("[^A-Z0-9\\-]", " ")
-                .replaceAll("\\s+", " ")
-                .trim();
-
-        if (cleaned.isEmpty()) return null;
-
-        String best = null;
-        for (String part : cleaned.split(" ")) {
-            if (part.length() < 3) continue;
-            if (part.equals("EMMC") ||
-                    part.equals("SAMSUNG") ||
-                    part.equals("MICRON") ||
-                    part.equals("HYNIX") ||
-                    part.equals("SK")) {
-                continue;
-            }
-            if (best == null || part.length() > best.length()) {
-                best = part;
-            }
-        }
-        return best;
-    }
-
-    private String safeMessage(Exception e) {
-        String msg = e.getMessage();
-        return msg == null || msg.trim().isEmpty()
-                ? e.getClass().getSimpleName()
-                : msg;
-    }
-
-    @Override
-    public void onRequestPermissionsResult(
-            int requestCode,
-            @NonNull String[] permissions,
-            @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == CAMERA_REQUEST) {
-            if (grantResults.length > 0 &&
-                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startCamera();
-            } else {
-                Toast.makeText(
-                        this,
-                        "Izin kamera diperlukan untuk Scan eMMC.",
-                        Toast.LENGTH_LONG
-                ).show();
-                finish();
-            }
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        if (recognizer != null) recognizer.close();
-        super.onDestroy();
-    }
+    @Override protected void onDestroy(){super.onDestroy();executor.shutdown();}
 }
