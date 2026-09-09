@@ -1,5 +1,15 @@
-# Jejak Teknisi — Grade eMMC
+# Jejak Teknisi - Grade eMMC
+
 Project Android baru khusus database Grade eMMC.
-Fitur: SQLite offline, pencarian kode/grade/kapasitas, filter grade, detail, tambah/edit/hapus.
-Database seed: 271 baris hasil transkripsi/OCR dari gambar referensi pengguna. Karena gambar beresolusi terbatas, beberapa karakter mungkin perlu dikoreksi; menu Edit tersedia.
-Buka di Android Studio dan Sync/Build APK.
+
+## Perbaikan build
+Versi ini menggunakan dependency Material Components sehingga resource `Theme.Material3.DayNight.NoActionBar` tersedia saat AAPT melakukan resource linking.
+
+## Fitur
+- Pencarian kode/grade/kapasitas
+- Filter grade
+- Detail, tambah, edit, hapus
+- Database SQLite offline
+- Seed data dari tabel Grade eMMC
+
+Build: `./gradlew :app:assembleDebug`
