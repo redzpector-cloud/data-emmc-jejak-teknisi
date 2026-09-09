@@ -21,3 +21,10 @@ Perintah:
 
 ## GitHub Actions
 Workflow contoh ada di `.github/workflows/android.yml`.
+
+
+## Fokus fitur versi ini
+Alur scan dibuat manual seperti Google Lens:
+Foto → fokus/crop tulisan → OCR → koreksi → cocokkan database → tampilkan kapasitas + **Grade eMMC**.
+Grade tidak dihapus dan dapat diedit dari hasil pencarian atau menu database.
+Logo Jejak Teknisi sudah dipasang di beranda.

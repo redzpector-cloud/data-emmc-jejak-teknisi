@@ -41,6 +41,10 @@ public class MainActivity extends Activity {
         setContentView(root);
 
         LinearLayout head=new LinearLayout(this); head.setGravity(Gravity.CENTER_VERTICAL);
+        ImageView logo=new ImageView(this);
+        logo.setImageResource(com.jejakteknisi.gradeemmc.R.drawable.logo_jejak_teknisi);
+        logo.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        head.addView(logo,new LinearLayout.LayoutParams(dp(64),dp(64)));
         TextView gear=title("⚙",30); head.addView(gear,new LinearLayout.LayoutParams(dp(52),dp(60)));
         head.addView(title("JEJAK TEKNISI\nSolusi Lengkap eMMC",21),new LinearLayout.LayoutParams(0,dp(70),1));
         root.addView(head);
@@ -104,8 +108,35 @@ public class MainActivity extends Activity {
     void showDatabase(){
         ArrayList<EmmcRecord> list=DatabaseStore.load(this);
         StringBuilder s=new StringBuilder();
-        for(EmmcRecord e:list) s.append(e.code).append(" • ").append(e.manufacturer).append(" • ").append(e.capacity).append(" • Grade ").append(e.grade.isEmpty()?"-":e.grade).append("\n\n");
-        new AlertDialog.Builder(this).setTitle("Data eMMC ("+list.size()+")").setMessage(s.length()==0?"Belum ada data.":s.toString()).setPositiveButton("OK",null).show();
+        for(EmmcRecord e:list) s.append(e.code).append(" • ").append(e.manufacturer).append(" • ").append(e.capacity)
+            .append(" • Grade ").append(e.grade.isEmpty()?"Belum ditentukan":e.grade).append("\n");
+        AlertDialog dlg=new AlertDialog.Builder(this).setTitle("Data eMMC ("+list.size()+")")
+            .setMessage(s.length()==0?"Belum ada data.":s.toString())
+            .setNeutralButton("TAMBAH",null).setPositiveButton("OK",null).create();
+        dlg.setOnShowListener(v->dlg.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(x->{dlg.dismiss();editRecord(null);}));
+        dlg.show();
+    }
+    void editRecord(EmmcRecord rec){
+        LinearLayout box=new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL); box.setPadding(dp(12),0,dp(12),0);
+        EditText code=new EditText(this); code.setHint("Kode eMMC"); code.setText(rec==null?"":rec.code);
+        EditText man=new EditText(this); man.setHint("Manufacturer"); man.setText(rec==null?"":rec.manufacturer);
+        EditText cap=new EditText(this); cap.setHint("Kapasitas, contoh 64 GB"); cap.setText(rec==null?"":rec.capacity);
+        EditText ver=new EditText(this); ver.setHint("eMMC Version"); ver.setText(rec==null?"":rec.version);
+        EditText grade=new EditText(this); grade.setHint("Grade eMMC, contoh A / A+"); grade.setText(rec==null?"":rec.grade);
+        EditText pack=new EditText(this); pack.setHint("Package"); pack.setText(rec==null?"":rec.pack);
+        EditText source=new EditText(this); source.setHint("Sumber"); source.setText(rec==null?"":rec.source);
+        box.addView(code);box.addView(man);box.addView(cap);box.addView(ver);box.addView(grade);box.addView(pack);box.addView(source);
+        new AlertDialog.Builder(this).setTitle(rec==null?"Tambah eMMC":"Edit eMMC").setView(box)
+            .setNegativeButton("BATAL",null).setPositiveButton("SIMPAN",(d,w)->{
+                ArrayList<EmmcRecord> list=DatabaseStore.load(this);
+                EmmcRecord x=new EmmcRecord(code.getText().toString().trim(),man.getText().toString().trim(),cap.getText().toString().trim(),
+                    ver.getText().toString().trim(),grade.getText().toString().trim(),pack.getText().toString().trim(),source.getText().toString().trim());
+                boolean replaced=false;
+                for(int i=0;i<list.size();i++) if(list.get(i).code.equalsIgnoreCase(x.code)){list.set(i,x);replaced=true;break;}
+                if(!replaced) list.add(x);
+                DatabaseStore.save(this,list);
+                Toast.makeText(this,"Data eMMC disimpan",Toast.LENGTH_SHORT).show();
+            }).show();
     }
     void showHistory(){
         new AlertDialog.Builder(this).setTitle("Riwayat").setMessage("Riwayat pencarian akan tersimpan pada versi lanjutan.").setPositiveButton("OK",null).show();

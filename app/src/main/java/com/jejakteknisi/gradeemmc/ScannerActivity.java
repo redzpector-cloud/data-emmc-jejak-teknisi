@@ -150,12 +150,31 @@ public class ScannerActivity extends AppCompatActivity {
         if(found!=null){
             new AlertDialog.Builder(this).setTitle(found.code)
                 .setMessage("Manufacturer: "+found.manufacturer+"\nKapasitas: "+found.capacity+"\neMMC Version: "+found.version+
-                    "\nGrade: "+(found.grade.isEmpty()?"-":found.grade)+"\nPackage: "+found.pack+"\nSumber: "+found.source)
-                .setPositiveButton("EDIT",null).setNegativeButton("OK",null).show();
+                    "\nGrade eMMC: "+(found.grade.isEmpty()?"Belum ditentukan":found.grade)+"\nPackage: "+found.pack+"\nSumber: "+found.source)
+                .setPositiveButton("EDIT",(d,w)->editFound(found)).setNegativeButton("OK",null).show();
         }else{
             String url="https://www.google.com/search?q="+android.net.Uri.encode(clean+" eMMC datasheet capacity grade");
             startActivity(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse(url)));
         }
     }
+    void editFound(EmmcRecord rec){
+        LinearLayout box=new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL); box.setPadding(dp(10),0,dp(10),0);
+        EditText cap=new EditText(this); cap.setHint("Kapasitas"); cap.setText(rec.capacity);
+        EditText grade=new EditText(this); grade.setHint("Grade eMMC"); grade.setText(rec.grade);
+        EditText ver=new EditText(this); ver.setHint("eMMC Version"); ver.setText(rec.version);
+        box.addView(cap); box.addView(grade); box.addView(ver);
+        new AlertDialog.Builder(this).setTitle("Edit "+rec.code).setView(box)
+            .setNegativeButton("BATAL",null).setPositiveButton("SIMPAN",(d,w)->{
+                ArrayList<EmmcRecord> list=DatabaseStore.load(this);
+                for(EmmcRecord e:list) if(e.code.equalsIgnoreCase(rec.code)){
+                    e.capacity=cap.getText().toString().trim();
+                    e.grade=grade.getText().toString().trim();
+                    e.version=ver.getText().toString().trim();
+                }
+                DatabaseStore.save(this,list);
+                Toast.makeText(this,"Grade & data disimpan",Toast.LENGTH_SHORT).show();
+            }).show();
+    }
+
     @Override protected void onDestroy(){super.onDestroy();executor.shutdown();}
 }
