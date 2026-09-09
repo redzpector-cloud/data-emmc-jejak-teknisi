@@ -157,6 +157,29 @@ function search(){
    <button class="edit-btn" onclick="speakEntry('${esc(x.code).replace(/'/g,"\\'")}','${esc(x.grade||"-").replace(/'/g,"\\'")}','${esc(x.capacity||"-").replace(/'/g,"\\'")}')">🔊 BACA HASIL</button></div>`;
  }).join("");
 }
+
+function showOcrResult(text){
+ const overlay=document.createElement('div');
+ overlay.id='ocrOverlay';
+ overlay.style='position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;padding:18px;display:flex;align-items:center;justify-content:center;';
+ const box=document.createElement('div');
+ box.style='background:#fff;color:#111;border-radius:18px;padding:18px;width:min(560px,94vw);box-shadow:0 12px 40px rgba(0,0,0,.4);';
+ box.innerHTML='<h2 style="margin:0 0 8px">🔤 Teks terdeteksi</h2><p style="margin:0 0 12px;color:#666">Seperti Google Lens: pilih/edit tulisan sebelum mencari.</p><textarea id="ocrText" style="width:100%;min-height:150px;padding:12px;border:1px solid #ccd5df;border-radius:12px;font-size:17px;box-sizing:border-box"></textarea><div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn-secondary" onclick="copyOcrText()">📋 COPY</button><button class="btn" onclick="searchOcrText()">🔎 CARI</button><button class="btn-secondary" onclick="document.getElementById(\'ocrOverlay\').remove()">✕ Tutup</button></div><div id="ocrSearchHint" style="margin-top:10px;font-size:12px;color:#666"></div>';
+ overlay.appendChild(box);document.body.appendChild(overlay);document.getElementById('ocrText').value=text||'';document.getElementById('ocrText').focus();
+}
+function copyOcrText(){const el=document.getElementById('ocrText');el.select();navigator.clipboard&&navigator.clipboard.writeText(el.value);document.getElementById('ocrSearchHint').textContent='Teks berhasil disalin.';}
+function searchOcrText(){
+ const q=(document.getElementById('ocrText').value||'').trim(); if(!q)return;
+ const all=allDB(), n=norm(q); let found=all.find(x=>norm(x.code)===n);
+ if(!found){ const tokens=q.toUpperCase().replace(/[^A-Z0-9\-\n ]/g,' ').split(/\s+/).filter(Boolean); found=all.find(x=>tokens.some(t=>t.length>=4&&norm(x.code)===norm(t))); }
+ if(found){ document.getElementById('ocrOverlay').remove(); document.getElementById('q').value=found.code; search(); document.getElementById('results').scrollIntoView({behavior:'smooth'}); }
+ else {
+   const url='https://www.google.com/search?q='+encodeURIComponent(q+' eMMC datasheet capacity grade');
+   if(window.Android&&Android.openWebSearch) Android.openWebSearch(url); else window.open(url,'_blank');
+   document.getElementById('ocrSearchHint').textContent='Tidak ada di database. Membuka pencarian web...';
+ }
+}
+
 function startVoice(){ if(!getSettings().voiceSearchEnabled){alert('Voice Search sedang dimatikan di Pengaturan.');return;}
  if(window.Android&&Android.startVoiceSearch) Android.startVoiceSearch();
  else alert("Voice hanya tersedia di aplikasi Android.");

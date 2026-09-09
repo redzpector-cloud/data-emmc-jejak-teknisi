@@ -429,11 +429,13 @@ public class ScannerActivity extends AppCompatActivity {
 
             recognizer.process(image)
                     .addOnSuccessListener(result -> {
-                        String candidate = extractCandidate(result.getText());
+                        String fullText = result.getText() == null ? "" : result.getText().trim();
+                        String candidate = extractCandidate(fullText);
 
-                        if (candidate != null && candidate.length() >= 3) {
+                        if (fullText.length() >= 3) {
                             Intent out = new Intent();
-                            out.putExtra("ocr_text", candidate);
+                            out.putExtra("ocr_text", fullText);
+                            out.putExtra("ocr_candidate", candidate == null ? "" : candidate);
                             setResult(RESULT_OK, out);
                             photoFile.delete();
                             finish();

@@ -113,9 +113,9 @@ public class MainActivity extends Activity {
         if (requestCode == SCAN_REQUEST && resultCode == RESULT_OK && data != null) {
             String text = data.getStringExtra("ocr_text");
             if (text == null || text.trim().isEmpty()) return;
-            String safe = text.replace("\\", "\\\\").replace("'", "\\'").replace("\n", " ").replace("\r", " ");
-            web.evaluateJavascript("setScanResult('" + safe + "');", null);
-            Toast.makeText(this, "Hasil OCR: " + text, Toast.LENGTH_SHORT).show();
+            String safe = text.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "\\r");
+            web.evaluateJavascript("showOcrResult('" + safe + "');", null);
+            Toast.makeText(this, "Tulisan terdeteksi. Pilih teks lalu Copy atau Cari.", Toast.LENGTH_SHORT).show();
         }
     }
 }
