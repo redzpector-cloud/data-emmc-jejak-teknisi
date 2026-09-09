@@ -20,6 +20,9 @@ import androidx.camera.core.Camera;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
+import androidx.camera.core.FocusMeteringAction;
+import androidx.camera.core.MeteringPoint;
+import androidx.camera.core.MeteringPointFactory;
 import androidx.camera.core.Preview;
 import androidx.camera.core.TorchState;
 import androidx.camera.lifecycle.ProcessCameraProvider;
@@ -88,6 +91,25 @@ public class ScannerActivity extends AppCompatActivity {
         previewView.setScaleType(PreviewView.ScaleType.FILL_CENTER);
         root.addView(previewView, new FrameLayout.LayoutParams(-1, -1));
 
+        // TAP-TO-FOCUS: tap any point on the preview to focus the eMMC lettering.
+        previewView.setOnTouchListener((v, event) -> {
+            if (event.getAction() == android.view.MotionEvent.ACTION_UP && camera != null) {
+                try {
+                    MeteringPointFactory factory =
+                            previewView.getMeteringPointFactory();
+                    MeteringPoint point = factory.createPoint(event.getX(), event.getY());
+                    FocusMeteringAction action = new FocusMeteringAction.Builder(point)
+                            .setAutoCancelDuration(3, java.util.concurrent.TimeUnit.SECONDS)
+                            .build();
+                    camera.getCameraControl().startFocusAndMetering(action);
+                    status.setText("Fokus diatur. Jika tulisan sudah jelas, tekan FOTO & BACA.");
+                } catch (Exception ignored) {
+                    status.setText("Fokus otomatis tidak tersedia. Coba dekatkan kamera.");
+                }
+            }
+            return true;
+        });
+
         // TOP BAR
         LinearLayout topBar = new LinearLayout(this);
         topBar.setOrientation(LinearLayout.HORIZONTAL);
@@ -141,7 +163,7 @@ public class ScannerActivity extends AppCompatActivity {
         LinearLayout zoomBar = new LinearLayout(this);
         zoomBar.setOrientation(LinearLayout.VERTICAL);
         zoomBar.setGravity(Gravity.CENTER);
-        zoomBar.setPadding(6, 8, 6, 8);
+        zoomBar.setPadding(8, 10, 8, 10);
         zoomBar.setBackgroundColor(0xCC101C2C);
 
         Button zoomIn = cameraButton("+");
@@ -159,18 +181,18 @@ public class ScannerActivity extends AppCompatActivity {
         Button zoom3 = cameraButton("3×");
         Button zoom4 = cameraButton("4×");
 
-        zoomBar.addView(zoomIn, new LinearLayout.LayoutParams(76, 64));
-        zoomBar.addView(zoomLabel, new LinearLayout.LayoutParams(76, 44));
-        zoomBar.addView(zoomOut, new LinearLayout.LayoutParams(76, 64));
-        zoomBar.addView(zoom05, new LinearLayout.LayoutParams(76, 52));
-        zoomBar.addView(zoom1, new LinearLayout.LayoutParams(76, 52));
-        zoomBar.addView(zoom2, new LinearLayout.LayoutParams(76, 52));
-        zoomBar.addView(zoom3, new LinearLayout.LayoutParams(76, 52));
-        zoomBar.addView(zoom4, new LinearLayout.LayoutParams(76, 52));
+        zoomBar.addView(zoomIn, new LinearLayout.LayoutParams(100, 82));
+        zoomBar.addView(zoomLabel, new LinearLayout.LayoutParams(100, 54));
+        zoomBar.addView(zoomOut, new LinearLayout.LayoutParams(100, 82));
+        zoomBar.addView(zoom05, new LinearLayout.LayoutParams(100, 64));
+        zoomBar.addView(zoom1, new LinearLayout.LayoutParams(100, 64));
+        zoomBar.addView(zoom2, new LinearLayout.LayoutParams(100, 64));
+        zoomBar.addView(zoom3, new LinearLayout.LayoutParams(100, 64));
+        zoomBar.addView(zoom4, new LinearLayout.LayoutParams(100, 64));
 
-        FrameLayout.LayoutParams zoomParams = new FrameLayout.LayoutParams(90, 500);
+        FrameLayout.LayoutParams zoomParams = new FrameLayout.LayoutParams(116, 650);
         zoomParams.gravity = Gravity.CENTER_VERTICAL | Gravity.END;
-        zoomParams.rightMargin = 12;
+        zoomParams.rightMargin = 14;
         root.addView(zoomBar, zoomParams);
 
         zoomOut.setOnClickListener(v -> changeZoom(-0.5f));
@@ -190,14 +212,14 @@ public class ScannerActivity extends AppCompatActivity {
         captureButton.setGravity(Gravity.CENTER);
         captureButton.setBackgroundColor(0xFF078DFF);
         captureButton.setPadding(12, 0, 12, 0);
-        captureButton.setMinHeight(86);
+        captureButton.setMinHeight(92);
         captureButton.setOnClickListener(v -> takePhoto());
 
-        FrameLayout.LayoutParams captureParams = new FrameLayout.LayoutParams(-1, 86);
+        FrameLayout.LayoutParams captureParams = new FrameLayout.LayoutParams(-1, 92);
         captureParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
         captureParams.leftMargin = 24;
         captureParams.rightMargin = 24;
-        captureParams.bottomMargin = 92;
+        captureParams.bottomMargin = 190;
         root.addView(captureButton, captureParams);
 
         TextView hint = new TextView(this);
@@ -209,7 +231,7 @@ public class ScannerActivity extends AppCompatActivity {
         hintParams.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
         hintParams.leftMargin = 70;
         hintParams.rightMargin = 70;
-        hintParams.bottomMargin = 184;
+        hintParams.bottomMargin = 282;
         root.addView(hint, hintParams);
 
         setContentView(root);
@@ -339,6 +361,17 @@ public class ScannerActivity extends AppCompatActivity {
         captureButton.setEnabled(false);
         captureButton.setText("⏳ MEMPROSES...");
         status.setText("Mengambil foto...\nJangan gerakkan kamera.");
+
+        // Trigger a short center autofocus before capturing for small eMMC markings.
+        try {
+            MeteringPointFactory factory = previewView.getMeteringPointFactory();
+            MeteringPoint center = factory.createPoint(
+                    previewView.getWidth() / 2f, previewView.getHeight() / 2f);
+            camera.getCameraControl().startFocusAndMetering(
+                    new FocusMeteringAction.Builder(center)
+                            .setAutoCancelDuration(2, java.util.concurrent.TimeUnit.SECONDS)
+                            .build());
+        } catch (Exception ignored) {}
 
         String fileName = "emmc_" +
                 new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) +
