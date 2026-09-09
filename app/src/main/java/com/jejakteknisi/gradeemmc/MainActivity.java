@@ -1,149 +1,19 @@
 package com.jejakteknisi.gradeemmc;
 
-import android.Manifest;
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.os.Bundle;
-import android.speech.RecognizerIntent;
-import android.view.Gravity;
-import android.view.View;
-import android.widget.*;
-import java.util.*;
+import android.app.*;import android.os.*;import android.content.*;import android.graphics.Color;import android.graphics.drawable.GradientDrawable;import android.speech.RecognizerIntent;import android.view.*;import android.widget.*;import java.util.*;
 
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
-public class MainActivity extends Activity {
-    static final int VOICE_REQ = 80;
-    LinearLayout root;
-    int dp(float v){ return (int)(v*getResources().getDisplayMetrics().density+0.5f); }
-
-    TextView title(String s, float size){
-        TextView t=new TextView(this); t.setText(s); t.setTextColor(0xFFFFFFFF); t.setTextSize(size);
-        t.setTypeface(null,1); t.setPadding(dp(8),dp(6),dp(8),dp(6)); return t;
+public class MainActivity extends Activity{
+    static final int VOICE=71; int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+.5f);}
+    @Override public void onCreate(Bundle b){super.onCreate(b);setContentView(R.layout.activity_main);
+        findViewById(R.id.btnScan).setOnClickListener(v->startActivity(new Intent(this,ScannerActivity.class)));
+        findViewById(R.id.btnVoice).setOnClickListener(v->voice());findViewById(R.id.btnDatabase).setOnClickListener(v->showDb());findViewById(R.id.btnAdd).setOnClickListener(v->edit(null));findViewById(R.id.btnSettings).setOnClickListener(v->settings());
     }
-    Button button(String text){
-        Button b=new Button(this); b.setText(text); b.setTextColor(0xFFFFFFFF);
-        b.setTextSize(14); b.setAllCaps(false); b.setMinHeight(dp(52));
-        b.setBackgroundColor(0xFF087FF5); return b;
-    }
-    @Override public void onCreate(Bundle b){
-        super.onCreate(b);
-        if(ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED)
-            ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.RECORD_AUDIO},91);
-        buildHome();
-    }
-    void buildHome(){
-        root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setPadding(dp(16),dp(16),dp(16),dp(12));
-        root.setBackgroundColor(0xFF07111F);
-        setContentView(root);
-
-        LinearLayout head=new LinearLayout(this); head.setGravity(Gravity.CENTER_VERTICAL);
-        ImageView logo=new ImageView(this);
-        logo.setImageResource(com.jejakteknisi.gradeemmc.R.drawable.logo_jejak_teknisi);
-        logo.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-        head.addView(logo,new LinearLayout.LayoutParams(dp(64),dp(64)));
-        TextView gear=title("⚙",30); head.addView(gear,new LinearLayout.LayoutParams(dp(52),dp(60)));
-        head.addView(title("JEJAK TEKNISI\nSolusi Lengkap eMMC",21),new LinearLayout.LayoutParams(0,dp(70),1));
-        root.addView(head);
-        gear.setOnClickListener(v->showSettings());
-
-        LinearLayout searchRow=new LinearLayout(this); searchRow.setGravity(Gravity.CENTER_VERTICAL);
-        EditText search=new EditText(this); search.setHint("Cari kode eMMC..."); search.setHintTextColor(0xFF9FB2C8); search.setTextColor(0xFFFFFFFF);
-        search.setSingleLine(true); search.setPadding(dp(12),0,dp(8),0); search.setBackgroundColor(0xFF102B45);
-        searchRow.addView(search,new LinearLayout.LayoutParams(0,dp(52),1));
-        Button voice=button("🎙"); voice.setMinWidth(dp(58)); searchRow.addView(voice);
-        root.addView(searchRow,new LinearLayout.LayoutParams(-1,dp(58)));
-        voice.setOnClickListener(v->voiceSearch(search));
-
-        Button scan=button("📷  SCAN eMMC\nFokus tulisan • OCR • Deteksi");
-        LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,dp(78)); sp.setMargins(0,dp(14),0,dp(12));
-        root.addView(scan,sp);
-        scan.setOnClickListener(v->{
-            if(ContextCompat.checkSelfPermission(this,Manifest.permission.CAMERA)!=PackageManager.PERMISSION_GRANTED){
-                ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.CAMERA},90);
-            } else startActivity(new Intent(this,ScannerActivity.class));
-        });
-
-        LinearLayout grid=new LinearLayout(this); grid.setOrientation(LinearLayout.VERTICAL);
-        String[][] labels={{"🗃️ Data eMMC","🕘 Riwayat"},{"🌐 Web Search","⚙️ Pengaturan"}};
-        for(int r=0;r<2;r++){
-            LinearLayout row=new LinearLayout(this);
-            for(int c=0;c<2;c++){
-                Button x=button(labels[r][c]); x.setBackgroundColor(0xFF0D1C2E);
-                row.addView(x,new LinearLayout.LayoutParams(0,dp(70),1));
-                if(r==0&&c==0) x.setOnClickListener(v->showDatabase());
-                if(r==0&&c==1) x.setOnClickListener(v->showHistory());
-                if(r==1&&c==0) x.setOnClickListener(v->webSearch(""));
-                if(r==1&&c==1) x.setOnClickListener(v->showSettings());
-            }
-            grid.addView(row);
-        }
-        root.addView(grid);
-        TextView tip=title("\nKenali eMMC • Tentukan kapasitas & grade • Simpan hasil",14);
-        tip.setTextColor(0xFF9FB2C8); root.addView(tip);
-    }
-
-    void voiceSearch(EditText target){
-        try{
-            Intent i=new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-            i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-            i.putExtra(RecognizerIntent.EXTRA_LANGUAGE,"id-ID");
-            startActivityForResult(i,VOICE_REQ);
-        }catch(Exception e){ Toast.makeText(this,"Voice search tidak tersedia",Toast.LENGTH_SHORT).show(); }
-    }
-    @Override protected void onActivityResult(int r,int c,Intent d){
-        super.onActivityResult(r,c,d);
-        if(r==VOICE_REQ&&c==RESULT_OK&&d!=null){
-            ArrayList<String> a=d.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-            if(a!=null&&!a.isEmpty()) webSearch(a.get(0));
-        }
-    }
-    void webSearch(String q){
-        String url="https://www.google.com/search?q="+android.net.Uri.encode((q==null?"":q)+" eMMC datasheet capacity");
-        startActivity(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse(url)));
-    }
-    void showDatabase(){
-        ArrayList<EmmcRecord> list=DatabaseStore.load(this);
-        StringBuilder s=new StringBuilder();
-        for(EmmcRecord e:list) s.append(e.code).append(" • ").append(e.manufacturer).append(" • ").append(e.capacity)
-            .append(" • Grade ").append(e.grade.isEmpty()?"Belum ditentukan":e.grade).append("\n");
-        AlertDialog dlg=new AlertDialog.Builder(this).setTitle("Data eMMC ("+list.size()+")")
-            .setMessage(s.length()==0?"Belum ada data.":s.toString())
-            .setNeutralButton("TAMBAH",null).setPositiveButton("OK",null).create();
-        dlg.setOnShowListener(v->dlg.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(x->{dlg.dismiss();editRecord(null);}));
-        dlg.show();
-    }
-    void editRecord(EmmcRecord rec){
-        LinearLayout box=new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL); box.setPadding(dp(12),0,dp(12),0);
-        EditText code=new EditText(this); code.setHint("Kode eMMC"); code.setText(rec==null?"":rec.code);
-        EditText man=new EditText(this); man.setHint("Manufacturer"); man.setText(rec==null?"":rec.manufacturer);
-        EditText cap=new EditText(this); cap.setHint("Kapasitas, contoh 64 GB"); cap.setText(rec==null?"":rec.capacity);
-        EditText ver=new EditText(this); ver.setHint("eMMC Version"); ver.setText(rec==null?"":rec.version);
-        EditText grade=new EditText(this); grade.setHint("Grade eMMC, contoh A / A+"); grade.setText(rec==null?"":rec.grade);
-        EditText pack=new EditText(this); pack.setHint("Package"); pack.setText(rec==null?"":rec.pack);
-        EditText source=new EditText(this); source.setHint("Sumber"); source.setText(rec==null?"":rec.source);
-        box.addView(code);box.addView(man);box.addView(cap);box.addView(ver);box.addView(grade);box.addView(pack);box.addView(source);
-        new AlertDialog.Builder(this).setTitle(rec==null?"Tambah eMMC":"Edit eMMC").setView(box)
-            .setNegativeButton("BATAL",null).setPositiveButton("SIMPAN",(d,w)->{
-                ArrayList<EmmcRecord> list=DatabaseStore.load(this);
-                EmmcRecord x=new EmmcRecord(code.getText().toString().trim(),man.getText().toString().trim(),cap.getText().toString().trim(),
-                    ver.getText().toString().trim(),grade.getText().toString().trim(),pack.getText().toString().trim(),source.getText().toString().trim());
-                boolean replaced=false;
-                for(int i=0;i<list.size();i++) if(list.get(i).code.equalsIgnoreCase(x.code)){list.set(i,x);replaced=true;break;}
-                if(!replaced) list.add(x);
-                DatabaseStore.save(this,list);
-                Toast.makeText(this,"Data eMMC disimpan",Toast.LENGTH_SHORT).show();
-            }).show();
-    }
-    void showHistory(){
-        new AlertDialog.Builder(this).setTitle("Riwayat").setMessage("Riwayat pencarian akan tersimpan pada versi lanjutan.").setPositiveButton("OK",null).show();
-    }
-    void showSettings(){
-        new AlertDialog.Builder(this).setTitle("Pengaturan")
-            .setMessage("Kamera: Fokus tulisan + Tap-to-focus\nOCR: Foto manual\nPencarian: Database lokal → web\nGrade: klasifikasi eMMC, bukan kerusakan")
-            .setPositiveButton("OK",null).show();
-    }
+    void voice(){try{Intent i=new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);i.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);i.putExtra(RecognizerIntent.EXTRA_LANGUAGE,"id-ID");i.putExtra(RecognizerIntent.EXTRA_PROMPT,"Sebutkan kode eMMC");startActivityForResult(i,VOICE);}catch(Exception e){Toast.makeText(this,"Voice tidak tersedia di perangkat ini",Toast.LENGTH_SHORT).show();}}
+    @Override protected void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(r==VOICE&&c==RESULT_OK&&d!=null){ArrayList<String>x=d.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);if(x!=null&&!x.isEmpty())showResult(x.get(0));}}
+    void showResult(String q){EmmcRecord e=DatabaseStore.find(this,q);if(e!=null)showCard(e);else{ArrayList<EmmcRecord>s=DatabaseStore.similar(this,q);StringBuilder m=new StringBuilder("Hasil suara: ").append(q).append("\n\n");if(s.isEmpty())m.append("Belum ada kecocokan database.");else{m.append("Kandidat terdekat:\n");for(EmmcRecord z:s)m.append("• ").append(z.code).append(" — ").append(z.capacity).append(" — Grade ").append(z.grade).append("\n");}new AlertDialog.Builder(this).setTitle("Kode tidak ditemukan").setMessage(m.toString()).setPositiveButton("CARI WEB",(di,w)->web(q)).setNegativeButton("OK",null).show();}}
+    void web(String q){startActivity(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse("https://www.google.com/search?q="+android.net.Uri.encode(q+" eMMC datasheet"))));}
+    void showCard(EmmcRecord e){String msg="Kode : "+e.code+"\nManufacturer : "+e.manufacturer+"\nKapasitas : "+e.capacity+"\neMMC Version : "+e.version+"\n\nGRADE eMMC : "+(e.grade.isEmpty()?"Belum ditentukan":e.grade)+"\nPackage : "+e.pack+"\nSumber : "+e.source;new AlertDialog.Builder(this).setTitle("eMMC Ditemukan").setMessage(msg).setPositiveButton("EDIT",(d,w)->edit(e)).setNeutralButton("CARI",(d,w)->web(e.code)).setNegativeButton("TUTUP",null).show();}
+    void showDb(){ArrayList<EmmcRecord>a=DatabaseStore.load(this);StringBuilder b=new StringBuilder();for(EmmcRecord e:a)b.append(e.code).append("\n").append(e.manufacturer).append(" • ").append(e.capacity).append(" • Grade: ").append(e.grade).append("\n\n");new AlertDialog.Builder(this).setTitle("Database eMMC • "+a.size()+" data").setMessage(b.toString()).setPositiveButton("TAMBAH",(d,w)->edit(null)).setNegativeButton("TUTUP",null).show();}
+    void edit(EmmcRecord old){LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(10),0,dp(10),0);EditText[]x=new EditText[7];String[]h={"Kode eMMC","Manufacturer","Kapasitas","eMMC Version","Grade eMMC","Package","Sumber"};String[]val=old==null?new String[7]:new String[]{old.code,old.manufacturer,old.capacity,old.version,old.grade,old.pack,old.source};for(int i=0;i<7;i++){x[i]=new EditText(this);x[i].setHint(h[i]);x[i].setText(val[i]==null?"":val[i]);box.addView(x[i]);}new AlertDialog.Builder(this).setTitle(old==null?"Tambah Data eMMC":"Edit Data eMMC").setView(box).setNegativeButton("BATAL",null).setPositiveButton("SIMPAN",(d,w)->{String code=x[0].getText().toString().trim();if(code.isEmpty()){Toast.makeText(this,"Kode eMMC wajib diisi",Toast.LENGTH_SHORT).show();return;}ArrayList<EmmcRecord>a=DatabaseStore.load(this);EmmcRecord n=new EmmcRecord(code,x[1].getText().toString().trim(),x[2].getText().toString().trim(),x[3].getText().toString().trim(),x[4].getText().toString().trim(),x[5].getText().toString().trim(),x[6].getText().toString().trim());boolean done=false;for(int i=0;i<a.size();i++)if(a.get(i).code.equalsIgnoreCase(n.code)){a.set(i,n);done=true;break;}if(!done)a.add(n);DatabaseStore.save(this,a);Toast.makeText(this,"Data eMMC & Grade disimpan",Toast.LENGTH_SHORT).show();}).show();}
+    void settings(){new AlertDialog.Builder(this).setTitle("Pengaturan Jejak Teknisi").setItems(new String[]{"Foto dulu, baru OCR","Enhance gambar sebelum OCR","Grade eMMC tetap aktif","Jika tidak ada, cari di web","Voice search aktif"},null).setPositiveButton("OK",null).show();}
 }

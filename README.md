@@ -1,30 +1,30 @@
-# Jejak Teknisi — Grade eMMC
+# Jejak Teknisi — eMMC Identifier
 
-Project Android baru untuk:
-- Kamera seperti Google Lens
-- Tap-to-focus pada tulisan eMMC
-- Autofocus
-- Zoom vertikal
-- Flash
-- Foto manual
-- OCR setelah foto
-- Edit/pilih teks
-- Copy
-- Cek database lokal
-- Jika tidak ada, buka pencarian web
-- Database awal eMMC
+Project Android baru untuk identifikasi marking eMMC.
+
+## Alur scan
+1. Kamera live dengan tap-to-focus.
+2. Zoom vertikal + / - dan slider.
+3. Tekan FOTO.
+4. Foto ditampilkan untuk diperiksa.
+5. Tekan BACA TULISAN.
+6. Gambar diproses dengan enhancement lokal (grayscale/kontras/scale) dan OCR dijalankan pada foto asli + versi enhanced.
+7. Hasil OCR dicocokkan dengan database menggunakan pencocokan karakter.
+8. Jika tidak ditemukan, tersedia CARI WEB.
+
+## Data eMMC
+- Kode
+- Manufacturer
+- Kapasitas
+- eMMC Version
+- **Grade eMMC**
+- Package
+- Sumber
+
+Grade eMMC sengaja dipertahankan dan dapat diedit. Nilai yang belum tervalidasi ditampilkan sebagai "Belum ditentukan".
+
+## Catatan AI
+Versi ini menggunakan enhancement gambar lokal + OCR dan pencocokan database. Ini bukan layanan AI cloud dan tidak mengarang karakter yang tidak terlihat. Integrasi AI cloud dapat ditambahkan sebagai tahap berikutnya jika dibutuhkan.
 
 ## Build
-Gunakan Gradle 8.7 dengan JDK 17.
-Perintah:
-`./gradlew :app:assembleDebug --no-daemon`
-
-## GitHub Actions
-Workflow contoh ada di `.github/workflows/android.yml`.
-
-
-## Fokus fitur versi ini
-Alur scan dibuat manual seperti Google Lens:
-Foto → fokus/crop tulisan → OCR → koreksi → cocokkan database → tampilkan kapasitas + **Grade eMMC**.
-Grade tidak dihapus dan dapat diedit dari hasil pencarian atau menu database.
-Logo Jejak Teknisi sudah dipasang di beranda.
+GitHub Actions menggunakan JDK 17, Android Gradle Plugin 8.6.1, compileSdk 35, dan Gradle 8.7.

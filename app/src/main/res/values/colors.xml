@@ -1,9 +1,9 @@
 <resources>
-    <color name="navy">#07111F</color>
-    <color name="panel">#0D1C2E</color>
-    <color name="blue">#087FF5</color>
-    <color name="cyan">#00C8FF</color>
-    <color name="green">#00D084</color>
-    <color name="white">#FFFFFF</color>
-    <color name="muted">#9FB2C8</color>
+    <color name="jt_bg">#08111F</color>
+    <color name="jt_surface">#101C2E</color>
+    <color name="jt_surface2">#16253B</color>
+    <color name="jt_accent">#25D366</color>
+    <color name="jt_accent2">#19A7CE</color>
+    <color name="jt_text">#F7FAFC</color>
+    <color name="jt_muted">#9BAEC4</color>
 </resources>

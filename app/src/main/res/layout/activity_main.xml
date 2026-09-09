@@ -1,0 +1,30 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/jt_bg">
+    <LinearLayout android:orientation="vertical" android:padding="18dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <LinearLayout android:gravity="center_vertical" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <ImageView android:id="@+id/logo" android:src="@drawable/logo_jejak_teknisi" android:scaleType="centerInside" android:layout_width="66dp" android:layout_height="66dp" />
+            <LinearLayout android:orientation="vertical" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:paddingStart="10dp">
+                <TextView android:text="JEJAK TEKNISI" android:textStyle="bold" android:textSize="23sp" android:textColor="@color/jt_text" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                <TextView android:text="eMMC Identifier • Scanner • Database" android:textSize="13sp" android:textColor="@color/jt_muted" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
+            <Button android:id="@+id/btnSettings" android:text="⚙" android:textSize="20sp" android:background="@drawable/bg_secondary" android:textColor="@color/jt_text" android:layout_width="52dp" android:layout_height="52dp" />
+        </LinearLayout>
+
+        <LinearLayout android:orientation="vertical" android:background="@drawable/bg_card" android:layout_marginTop="22dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <TextView android:text="IDENTIFIKASI eMMC" android:textStyle="bold" android:textSize="22sp" android:textColor="@color/jt_text" android:layout_width="match_parent" android:layout_height="wrap_content" />
+            <TextView android:text="Foto marking IC, perjelas gambar, baca tulisan, lalu cocokkan dengan database untuk melihat kapasitas dan Grade eMMC." android:textSize="14sp" android:textColor="@color/jt_muted" android:layout_marginTop="7dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
+            <Button android:id="@+id/btnScan" android:text="📷  FOTO &amp; SCAN eMMC" android:textStyle="bold" android:textSize="17sp" android:textColor="#06120A" android:background="@drawable/bg_primary" android:layout_marginTop="16dp" android:layout_width="match_parent" android:layout_height="58dp" />
+        </LinearLayout>
+
+        <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp">
+            <Button android:id="@+id/btnVoice" android:text="🎙  Suara" android:textColor="@color/jt_text" android:background="@drawable/bg_secondary" android:layout_width="0dp" android:layout_height="54dp" android:layout_weight="1" android:layout_marginEnd="6dp" />
+            <Button android:id="@+id/btnDatabase" android:text="📚  Database" android:textColor="@color/jt_text" android:background="@drawable/bg_secondary" android:layout_width="0dp" android:layout_height="54dp" android:layout_weight="1" android:layout_marginStart="6dp" />
+        </LinearLayout>
+        <Button android:id="@+id/btnAdd" android:text="＋  Tambah / Edit Data eMMC" android:textColor="@color/jt_text" android:background="@drawable/bg_secondary" android:layout_marginTop="12dp" android:layout_width="match_parent" android:layout_height="54dp" />
+
+        <LinearLayout android:orientation="vertical" android:background="@drawable/bg_card" android:layout_marginTop="18dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <TextView android:text="DATA UTAMA" android:textStyle="bold" android:textSize="14sp" android:textColor="@color/jt_accent" android:layout_width="match_parent" android:layout_height="wrap_content" />
+            <TextView android:text="Kode IC  •  Manufacturer  •  Kapasitas  •  eMMC Version" android:textSize="13sp" android:textColor="@color/jt_muted" android:layout_marginTop="6dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
+            <TextView android:text="Grade eMMC tetap tersedia untuk klasifikasi Grade &amp; Kapasitas, bukan diagnosis kerusakan." android:textSize="12sp" android:textColor="@color/jt_muted" android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>
