@@ -1,7 +1,7 @@
 package com.jejakteknisi.gradeemmc;
 
 import android.Manifest;
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ScannerActivity extends Activity {
+public class ScannerActivity extends AppCompatActivity {
     private static final int CAMERA_REQUEST = 3001;
     private PreviewView previewView;
     private TextView status;
