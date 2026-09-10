@@ -19,10 +19,10 @@ public class MainActivity extends Activity {
             "A+ Samsung/A khusus","Pilihan 256","Pilihan 128","Pilihan 64",
             "Pilihan 32","Pilihan 16","Pilihan 8GB"};
 
-    int bgDark=Color.rgb(18,20,22), cardDark=Color.rgb(31,35,39);
-    int card2=Color.rgb(38,43,48), green=Color.rgb(0,190,130);
-    int greenDark=Color.rgb(0,135,95), white=Color.WHITE;
-    int gray=Color.rgb(185,191,197), line=Color.rgb(70,76,82);
+    int green = Color.rgb(0,190,130); cardDark=Color.rgb(31,35,39);
+    int dark = Color.rgb(18,20,22); green=Color.rgb(0,190,130);
+    int light = Color.rgb(18,20,22); white=Color.WHITE;
+    int gray = Color.rgb(105,112,120); line=Color.rgb(70,76,82);
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
@@ -140,7 +140,7 @@ public class MainActivity extends Activity {
         String g=grade==null?"Semua":grade.getSelectedItem().toString();
         List<String[]> rows=db.search(q,g);
 
-        TextView count=tv(rows.size()+" DATA eMMC",14,white);
+        TextView count = tv(rows.size()+" DATA eMMC",14,dark);
         count.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         count.setPadding(3,4,3,10);
         content.addView(count);
@@ -168,7 +168,7 @@ public class MainActivity extends Activity {
         LinearLayout card=new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(18,14,18,14);
-        card.setBackground(box(cardDark,18));
+        card.setBackground(box(Color.rgb(31,35,39),20));
 
         LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,-2);
         cp.bottomMargin=9;
@@ -176,7 +176,7 @@ public class MainActivity extends Activity {
         LinearLayout top=new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
 
-        TextView code=tv(r[0],18,white);
+        TextView code=tv(r[0],18,Color.WHITE);
         code.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
 
         TextView gr=tv(r[1],12,white);
